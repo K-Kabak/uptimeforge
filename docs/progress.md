@@ -2,22 +2,22 @@
 
 The specification is authoritative. A phase is verified only by recorded checks, never by provider mocks alone.
 
-| Phase | Status |
-| --- | --- |
-| 0 Repository | In progress |
-| 1 Foundation | Pending |
-| 2 Database/auth | Pending |
-| 3 Monitor CRUD | Pending |
-| 4 Secure checker | Pending |
-| 5 Persistence/analytics | Pending |
-| 6 QStash pipeline | Pending |
-| 7 Incidents | Pending |
-| 8 Email | Pending |
-| 9 Status pages | Pending |
-| 10 Retention/lifecycle | Pending |
-| 11 UX | Pending |
-| 12 Test hardening | Pending |
-| 13 CI | Pending |
+| Phase                   | Status                       |
+| ----------------------- | ---------------------------- |
+| 0 Repository            | Complete: remote main pushed |
+| 1 Foundation            | Pending                      |
+| 2 Database/auth         | Pending                      |
+| 3 Monitor CRUD          | Pending                      |
+| 4 Secure checker        | Pending                      |
+| 5 Persistence/analytics | Pending                      |
+| 6 QStash pipeline       | Pending                      |
+| 7 Incidents             | Pending                      |
+| 8 Email                 | Pending                      |
+| 9 Status pages          | Pending                      |
+| 10 Retention/lifecycle  | Pending                      |
+| 11 UX                   | Pending                      |
+| 12 Test hardening       | Pending                      |
+| 13 CI                   | Pending                      |
 
 ## Decisions
 
@@ -34,3 +34,9 @@ The specification is authoritative. A phase is verified only by recorded checks,
 - Real GitHub OAuth requires development client ID and secret.
 - Real Upstash Redis/QStash and Resend require credentials; no production provisioning will be attempted.
 - Production capacity and DNS/domain verification belong to Phase 14.
+
+## Verification evidence
+
+- Phase 0: Git initialized with configured author; public repository created; main pushed.
+- Phase 1: Node 24.21.0; lint/typecheck/unit test/format/build verified locally.
+- PostgreSQL 17 container is available at localhost:55432 (development only).

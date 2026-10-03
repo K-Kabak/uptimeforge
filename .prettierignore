@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+UptimeForge_SPEC.md
+.next
+.local
+node_modules
+playwright-report
+test-results
