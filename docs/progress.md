@@ -14,7 +14,7 @@ The specification is authoritative. A phase is verified only by recorded checks,
 | 7 Incidents             | Complete                                  |
 | 8 Email                 | Implemented; real Resend blocked          |
 | 9 Status pages          | Complete                                  |
-| 10 Retention/lifecycle  | Pending                                   |
+| 10 Retention/lifecycle  | Complete                                  |
 | 11 UX                   | Pending                                   |
 | 12 Test hardening       | Pending                                   |
 | 13 CI                   | Pending                                   |
@@ -58,3 +58,5 @@ The specification is authoritative. A phase is verified only by recorded checks,
 - Phase 8: 75 cumulative tests passed. Email rendering, transactional outbox, duplicate sender prevention and 24h-window handling tested with provider test doubles; no real email sent.
 
 - Phase 9: 84 cumulative tests passed; status-page ownership, publication, limits, safe DTO and cascade verified on PostgreSQL.
+
+- Phase 10: 87 cumulative tests passed; batched retention preserves incidents, account cascade and in-flight email deletion guard verified on PostgreSQL.
