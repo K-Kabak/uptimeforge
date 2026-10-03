@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { loadPublicStatus } from "@/lib/public-status";
+import { LocalTime } from "@/components/local-time";
 export async function generateMetadata({
   params,
 }: {
@@ -35,7 +36,7 @@ export default async function PublicStatus({
       <div className="my-8 rounded-xl border border-slate-400/20 p-6">
         <h2 className="text-2xl font-semibold">{page.overall}</h2>
         <p className="mt-2 text-sm opacity-60">
-          Last updated {page.lastUpdated}
+          Last updated <LocalTime value={page.lastUpdated} />
         </p>
       </div>
       <section aria-label="Services" className="grid gap-4">

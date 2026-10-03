@@ -7,6 +7,32 @@ import {
   type Target,
 } from "./checker";
 import { normalizeUrl, isPublicIp } from "@/lib/security/url";
+test("unexpected checker defects are internal errors, not endpoint outages", async () => {
+  expect(
+    (
+      await safeCheck("https://example.com", 1000, {
+        resolve: async () => [{ address: "1.1.1.1", family: 4 }],
+        transport: async () => {
+          throw new Error("implementation bug");
+        },
+      })
+    ).result,
+  ).toBe("INTERNAL_ERROR");
+});
+test("leaf certificate verification errors are classified as TLS failures", async () => {
+  expect(
+    (
+      await safeCheck("https://example.com", 1000, {
+        resolve: async () => [{ address: "1.1.1.1", family: 4 }],
+        transport: async () => {
+          throw Object.assign(new Error("Certificate details"), {
+            code: "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+          });
+        },
+      })
+    ).result,
+  ).toBe("TLS_ERROR");
+});
 const publicResolve = vi.fn(async () => [
   { address: "93.184.216.34", family: 4 },
 ]);

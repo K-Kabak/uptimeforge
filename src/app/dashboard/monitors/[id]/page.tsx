@@ -14,6 +14,8 @@ import { CheckHistory } from "@/components/monitors/check-history";
 import { Incidents } from "@/components/monitors/incidents";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { LocalTime } from "@/components/local-time";
+import { StatusBadge } from "@/components/status-badge";
 export default async function Details({
   params,
   searchParams,
@@ -44,7 +46,17 @@ export default async function Details({
     <>
       <h1 className="text-3xl font-bold">{monitor.name}</h1>
       <p className="mt-3 break-all opacity-70">{monitor.url}</p>
-      <p className="mt-4 font-mono">{monitor.status}</p>
+      <div className="mt-4">
+        <StatusBadge status={monitor.status} />
+      </div>
+      <p className="mt-3 text-sm">
+        Last response:{" "}
+        {monitor.lastResponseTimeMs === null
+          ? "No data"
+          : `${monitor.lastResponseTimeMs} ms`}{" "}
+        · HTTP {monitor.lastHttpStatus ?? "—"} · Last checked{" "}
+        <LocalTime value={monitor.lastCheckedAt?.toISOString() ?? null} />
+      </p>
       <MonitorActions id={id} paused={monitor.status === "PAUSED"} />
       <CheckNow id={id} disabled={monitor.status === "PAUSED"} />
       {monitor.urlChangedAt && (
@@ -90,6 +102,7 @@ export default async function Details({
       </form>
       <ResponseChart data={chart} />
       <CheckHistory
+        key={history.checks[0]?.id ?? "empty"}
         monitorId={id}
         initial={history.checks.map((c) => ({
           ...c,
@@ -97,8 +110,8 @@ export default async function Details({
         }))}
         nextCursor={history.nextCursor}
       />
-      <h2 className="text-xl font-bold">Settings</h2>
       <Incidents incidents={incidents} />
+      <h2 className="text-xl font-bold">Settings</h2>
       <MonitorForm monitor={monitor} />
     </>
   );

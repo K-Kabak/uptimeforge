@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Monitor } from "@prisma/client";
 import { LocalTime } from "@/components/local-time";
+import { StatusBadge } from "@/components/status-badge";
 export function MonitorList({
   monitors,
   uptime,
@@ -42,7 +43,7 @@ export function MonitorList({
                 <h2 className="font-semibold">{m.name}</h2>
                 <p className="text-sm opacity-60">{new URL(m.url).hostname}</p>
               </div>
-              <span className="font-mono">{m.status}</span>
+              <StatusBadge status={m.status} />
               <span className="text-sm">
                 24h{" "}
                 {uptime?.values[m.id] == null

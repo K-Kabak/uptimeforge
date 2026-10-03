@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
+import { LocalTime } from "@/components/local-time";
 type Row = {
   id: string;
   startedAt: string;
   result: string;
   httpStatus: number | null;
   durationMs: number;
+  errorMessage?: string | null;
 };
 export function CheckHistory({
   monitorId,
@@ -70,9 +72,9 @@ export function CheckHistory({
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-slate-400/20">
                 <td className="py-3">
-                  {new Date(r.startedAt).toLocaleString()}
+                  <LocalTime value={r.startedAt} />
                 </td>
-                <td>{r.result}</td>
+                <td>{r.errorMessage ?? r.result}</td>
                 <td>{r.httpStatus ?? "—"}</td>
                 <td>{r.durationMs} ms</td>
               </tr>

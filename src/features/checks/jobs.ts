@@ -136,9 +136,13 @@ export async function runCheckJob(
       where: { id: monitor.id },
       data: {
         ...state,
-        lastCheckedAt: outcome.finishedAt,
-        lastResponseTimeMs: outcome.durationMs,
-        lastHttpStatus: outcome.httpStatus,
+        ...(outcome.result === "INTERNAL_ERROR"
+          ? {}
+          : {
+              lastCheckedAt: outcome.finishedAt,
+              lastResponseTimeMs: outcome.durationMs,
+              lastHttpStatus: outcome.httpStatus,
+            }),
         leaseToken: null,
         leaseExpiresAt: null,
       },

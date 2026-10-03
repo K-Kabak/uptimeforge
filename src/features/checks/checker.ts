@@ -191,6 +191,7 @@ export async function safeCheck(
     if (
       controller.signal.aborted ||
       code === "TIMEOUT" ||
+      code === "ETIMEDOUT" ||
       code === "ABORT_ERR"
     ) {
       result = "TIMEOUT";
@@ -204,15 +205,24 @@ export async function safeCheck(
     ) {
       result = "DNS_ERROR";
       errorMessage = "Could not resolve host";
-    } else if (/TLS|CERT|SSL/.test(code)) {
+    } else if (
+      /TLS|CERT|SSL/.test(code) ||
+      code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
+    ) {
       result = "TLS_ERROR";
       errorMessage = "TLS connection failed";
-    } else {
+    } else if (
+      code === "CONNECTION_ERROR" ||
+      /^(ECONN|ENET|EHOST|EPIPE|HPE_|ERR_HTTP)/.test(code)
+    ) {
       result = "CONNECTION_ERROR";
       errorMessage =
         error instanceof AppError
           ? error.message
           : "Could not connect to endpoint";
+    } else {
+      result = "INTERNAL_ERROR";
+      errorMessage = "Checker temporarily unavailable";
     }
   } finally {
     clearTimeout(timer);

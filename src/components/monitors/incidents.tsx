@@ -1,4 +1,5 @@
 import type { Incident } from "@prisma/client";
+import { LocalTime } from "@/components/local-time";
 export function Incidents({ incidents }: { incidents: Incident[] }) {
   return (
     <section className="my-10">
@@ -16,10 +17,14 @@ export function Incidents({ incidents }: { incidents: Incident[] }) {
             </p>
             <p className="mt-2">{i.cause}</p>
             <p className="mt-2 text-sm opacity-60">
-              Started {i.startedAt.toISOString()} ·{" "}
-              {i.resolvedAt
-                ? `Resolved ${i.resolvedAt.toISOString()}`
-                : "Awaiting recovery"}
+              Started <LocalTime value={i.startedAt.toISOString()} /> ·{" "}
+              {i.resolvedAt ? (
+                <span>
+                  Resolved <LocalTime value={i.resolvedAt.toISOString()} />
+                </span>
+              ) : (
+                "Awaiting recovery"
+              )}
               {i.resolutionReason === "TARGET_CHANGED"
                 ? " · Monitor URL changed"
                 : ""}

@@ -122,6 +122,44 @@ test("lease takeover fences the old worker and prevents duplicate Checks", async
   }
 });
 afterAll(async () => db().$disconnect());
+test("internal errors preserve the last endpoint observation and do not open an incident", async () => {
+  const user = await db().user.create({ data: {} });
+  const last = new Date(Date.now() - 600000);
+  const monitor = await db().monitor.create({
+    data: {
+      userId: user.id,
+      name: "Internal",
+      url: "https://example.com",
+      normalizedUrl: "https://example.com/",
+      status: "UP",
+      lastCheckedAt: last,
+      lastHttpStatus: 200,
+      consecutiveFailures: 1,
+    },
+  });
+  try {
+    const job = await reserveManualJob(user.id, monitor.id);
+    await runCheckJob(job.id, async () => ({
+      ...success,
+      result: "INTERNAL_ERROR",
+      httpStatus: null,
+    }));
+    expect(
+      await db().monitor.findUniqueOrThrow({ where: { id: monitor.id } }),
+    ).toMatchObject({
+      lastCheckedAt: last,
+      lastHttpStatus: 200,
+      status: "UP",
+      consecutiveFailures: 1,
+    });
+    expect(
+      await db().incident.count({ where: { monitorId: monitor.id } }),
+    ).toBe(0);
+    expect(await monitorUptime(monitor.id, null)).toBeNull();
+  } finally {
+    await db().user.delete({ where: { id: user.id } });
+  }
+});
 test("pausing a queued monitor makes a late delivery a no-op", async () => {
   const user = await db().user.create({ data: {} });
   const monitor = await db().monitor.create({

@@ -85,6 +85,7 @@ test("manual check completes through the signed worker and redelivery is idempot
   await expect(page.getByRole("button", { name: "Check now" })).toBeEnabled({
     timeout: 15000,
   });
+  await expect(page.locator("tbody tr")).toHaveCount(1);
   expect(
     (await db().monitor.findUniqueOrThrow({ where: { id: monitor.id } }))
       .nextCheckAt,
