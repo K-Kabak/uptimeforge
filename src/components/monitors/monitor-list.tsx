@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Monitor } from "@prisma/client";
+import { LocalTime } from "@/components/local-time";
 export function MonitorList({
   monitors,
   uptime,
@@ -35,7 +36,7 @@ export function MonitorList({
             <Link
               key={m.id}
               href={`/dashboard/monitors/${m.id}`}
-              className="flex justify-between rounded-xl border border-slate-400/20 p-6"
+              className="grid gap-3 rounded-xl border border-slate-400/20 p-6 transition-colors hover:border-emerald-600 sm:grid-cols-[1fr_auto]"
             >
               <div>
                 <h2 className="font-semibold">{m.name}</h2>
@@ -48,7 +49,7 @@ export function MonitorList({
                   ? "No data"
                   : `${uptime.values[m.id]!.toFixed(2)}%`}{" "}
                 · {m.lastResponseTimeMs ?? "—"} ms · Last checked{" "}
-                {m.lastCheckedAt?.toISOString() ?? "never"}
+                <LocalTime value={m.lastCheckedAt?.toISOString() ?? null} />
               </span>
             </Link>
           ))}

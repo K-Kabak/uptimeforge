@@ -1,7 +1,7 @@
 import Link from "next/link";
 export default function Home() {
   return (
-    <main className="mx-auto max-w-6xl px-6 py-24">
+    <main id="main-content" className="mx-auto max-w-6xl px-6 py-24">
       <p className="font-mono text-sm text-emerald-600">
         UPTIMEFORGE / SERVICE MONITORING
       </p>

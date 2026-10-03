@@ -15,7 +15,7 @@ The specification is authoritative. A phase is verified only by recorded checks,
 | 8 Email                 | Implemented; real Resend blocked          |
 | 9 Status pages          | Complete                                  |
 | 10 Retention/lifecycle  | Complete                                  |
-| 11 UX                   | Pending                                   |
+| 11 UX                   | Complete                                  |
 | 12 Test hardening       | Pending                                   |
 | 13 CI                   | Pending                                   |
 
@@ -60,3 +60,5 @@ The specification is authoritative. A phase is verified only by recorded checks,
 - Phase 9: 84 cumulative tests passed; status-page ownership, publication, limits, safe DTO and cascade verified on PostgreSQL.
 
 - Phase 10: 87 cumulative tests passed; batched retention preserves incidents, account cascade and in-flight email deletion guard verified on PostgreSQL.
+
+- Phase 11: 87 tests, lint, format, typecheck and full optimized build passed. Responsive forms, themes, keyboard focus, toast feedback and target-only analytics reset implemented. Shared dispatcher DB fixtures run serially; concurrency remains explicitly tested.

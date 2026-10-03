@@ -10,7 +10,7 @@ export function uptime(success: number, completed: number) {
   return completed === 0 ? null : (success / completed) * 100;
 }
 export async function dashboardUptime(
-  monitors: { id: string; configVersion: number }[],
+  monitors: { id: string; urlChangedAt: Date | null }[],
 ) {
   if (!monitors.length)
     return { average: null, values: {} as Record<string, number | null> };
@@ -19,7 +19,7 @@ export async function dashboardUptime(
     where: {
       OR: monitors.map((m) => ({
         monitorId: m.id,
-        configVersion: m.configVersion,
+        startedAt: { gte: m.urlChangedAt ?? new Date(0) },
       })),
       startedAt: { gte: new Date(Date.now() - ranges["24h"]) },
       result: { not: "INTERNAL_ERROR" },
@@ -48,15 +48,18 @@ export async function dashboardUptime(
 }
 export async function monitorUptime(
   monitorId: string,
-  configVersion: number,
+  urlChangedAt: Date | null,
   range: Range = "24h",
 ) {
   const rows = await db().check.groupBy({
     by: ["result"],
     where: {
       monitorId,
-      configVersion,
-      startedAt: { gte: new Date(Date.now() - ranges[range]) },
+      startedAt: {
+        gte: new Date(
+          Math.max(Date.now() - ranges[range], urlChangedAt?.getTime() ?? 0),
+        ),
+      },
       result: { not: "INTERNAL_ERROR" },
     },
     _count: { _all: true },
@@ -103,14 +106,16 @@ export async function checkHistory(
 }
 export async function responseChart(
   monitorId: string,
-  configVersion: number,
+  urlChangedAt: Date | null,
   range: Range = "24h",
 ) {
   const seconds = Math.ceil(ranges[range] / 1000 / 300);
-  const since = new Date(Date.now() - ranges[range]);
+  const since = new Date(
+    Math.max(Date.now() - ranges[range], urlChangedAt?.getTime() ?? 0),
+  );
   const rows = await db().$queryRaw<
     { time: Date; duration: number }[]
-  >`SELECT date_bin(${seconds} * interval '1 second',"startedAt",TIMESTAMPTZ '2000-01-01') AS time, AVG("durationMs")::float8 AS duration FROM "Check" WHERE "monitorId"=${monitorId} AND "configVersion"=${configVersion} AND "startedAt">=${since} AND result='SUCCESS' GROUP BY time ORDER BY time LIMIT 300`;
+  >`SELECT date_bin(${seconds} * interval '1 second',"startedAt",TIMESTAMPTZ '2000-01-01') AS time, AVG("durationMs")::float8 AS duration FROM "Check" WHERE "monitorId"=${monitorId} AND "startedAt">=${since} AND result='SUCCESS' GROUP BY time ORDER BY time LIMIT 300`;
   return rows.map((r) => ({
     time: r.time.toISOString(),
     duration: Math.round(r.duration),

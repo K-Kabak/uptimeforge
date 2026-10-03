@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { currentUser } from "@/lib/auth";
 import { SignOutButton } from "@/components/auth-controls";
+import { ThemeToggle } from "@/components/theme-toggle";
 export const metadata = { robots: { index: false, follow: false } };
 export default async function DashboardLayout({
   children,
@@ -21,6 +22,7 @@ export default async function DashboardLayout({
           <Link href="/dashboard/status-pages">Status pages</Link>
           <Link href="/dashboard/account">Account</Link>
         </nav>
+        <ThemeToggle />
         <span className="text-sm">
           {user.name}
           <span className="ml-4">
@@ -28,7 +30,9 @@ export default async function DashboardLayout({
           </span>
         </span>
       </header>
-      <main className="py-10">{children}</main>
+      <main id="main-content" className="py-10">
+        {children}
+      </main>
     </div>
   );
 }

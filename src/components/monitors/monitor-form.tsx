@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/toast";
 type Values = {
   id?: string;
   name: string;
@@ -10,6 +11,7 @@ type Values = {
   timeoutMs: number;
 };
 export function MonitorForm({ monitor }: { monitor?: Values }) {
+  const toast = useToast();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const router = useRouter();
@@ -34,6 +36,7 @@ export function MonitorForm({ monitor }: { monitor?: Values }) {
       );
       const body = await response.json();
       if (!response.ok) throw new Error(body.error.message);
+      toast(monitor ? "Monitor updated" : "Monitor created");
       router.push(`/dashboard/monitors/${body.data.id}`);
       router.refresh();
     } catch (error) {

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/toast";
 export function MonitorActions({
   id,
   paused,
@@ -10,6 +11,7 @@ export function MonitorActions({
   paused: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   async function run(action: string) {
@@ -27,6 +29,13 @@ export function MonitorActions({
       );
       const b = await r.json();
       if (!r.ok) throw new Error(b.error.message);
+      toast(
+        action === "delete"
+          ? "Monitor deleted"
+          : action === "pause"
+            ? "Monitor paused"
+            : "Monitor resumed",
+      );
       if (action === "delete") router.push("/dashboard");
       router.refresh();
     } catch (e) {

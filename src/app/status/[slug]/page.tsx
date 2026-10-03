@@ -28,7 +28,7 @@ export default async function PublicStatus({
   const page = await loadPublicStatus((await params).slug);
   if (!page) notFound();
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16">
+    <main id="main-content" className="mx-auto max-w-3xl px-6 py-16">
       <p className="text-sm font-semibold text-emerald-600">SERVICE STATUS</p>
       <h1 className="mt-4 text-4xl font-bold">{page.name}</h1>
       <p className="mt-4 opacity-70">{page.description}</p>

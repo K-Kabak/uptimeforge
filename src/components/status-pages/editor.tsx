@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/toast";
 type Selection = { monitorId: string; displayName?: string | null };
 type Page = {
   id: string;
@@ -19,6 +20,7 @@ export function StatusPageEditor({
   monitors: { id: string; name: string }[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [selected, setSelected] = useState<Selection[]>(page?.monitors ?? []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -47,6 +49,7 @@ export function StatusPageEditor({
       );
       const b = await r.json();
       if (!r.ok) throw new Error(b.error.message);
+      toast("Status page saved");
       router.push("/dashboard/status-pages");
       router.refresh();
     } catch (e) {

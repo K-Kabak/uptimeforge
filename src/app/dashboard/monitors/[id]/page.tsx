@@ -13,13 +13,20 @@ import { ResponseChart } from "@/components/charts/response-chart";
 import { CheckHistory } from "@/components/monitors/check-history";
 import { Incidents } from "@/components/monitors/incidents";
 import { db } from "@/lib/db";
+import { z } from "zod";
 export default async function Details({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ range?: string }>;
 }) {
   const user = await requireUser();
   const { id } = await params;
+  const range = z
+    .enum(["24h", "7d", "30d"])
+    .catch("24h")
+    .parse((await searchParams).range);
   const monitor = await ownedMonitor(user.id, id).catch(() => notFound());
   const incidents = await db().incident.findMany({
     where: { monitorId: id },
@@ -27,11 +34,11 @@ export default async function Details({
     take: 50,
   });
   const [day, week, month, history, chart] = await Promise.all([
-    monitorUptime(id, monitor.configVersion, "24h"),
-    monitorUptime(id, monitor.configVersion, "7d"),
-    monitorUptime(id, monitor.configVersion, "30d"),
+    monitorUptime(id, monitor.urlChangedAt, "24h"),
+    monitorUptime(id, monitor.urlChangedAt, "7d"),
+    monitorUptime(id, monitor.urlChangedAt, "30d"),
     checkHistory(id),
-    responseChart(id, monitor.configVersion),
+    responseChart(id, monitor.urlChangedAt, range),
   ]);
   return (
     <>
@@ -64,6 +71,23 @@ export default async function Details({
         ))}
       </div>
       <h2 className="text-xl font-semibold">Response time</h2>
+      <form className="my-3 flex gap-3">
+        <label>
+          Chart range{" "}
+          <select
+            name="range"
+            defaultValue={range}
+            className="rounded border p-2"
+          >
+            {["24h", "7d", "30d"].map((value) => (
+              <option key={value}>{value}</option>
+            ))}
+          </select>
+        </label>
+        <button className="rounded border px-3" type="submit">
+          Apply range
+        </button>
+      </form>
       <ResponseChart data={chart} />
       <CheckHistory
         monitorId={id}

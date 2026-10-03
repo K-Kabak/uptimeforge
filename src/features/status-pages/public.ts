@@ -30,7 +30,7 @@ export async function publicStatusPage(slug: string) {
               id: true,
               name: true,
               status: true,
-              configVersion: true,
+              urlChangedAt: true,
               intervalMinutes: true,
               lastCheckedAt: true,
             },
@@ -49,7 +49,7 @@ export async function publicStatusPage(slug: string) {
             where: {
               OR: monitors.map((m) => ({
                 monitorId: m.id,
-                configVersion: m.configVersion,
+                startedAt: { gte: m.urlChangedAt ?? new Date(0) },
               })),
               startedAt: { gte: new Date(Date.now() - duration) },
               result: { not: "INTERNAL_ERROR" },

@@ -33,7 +33,13 @@ test("durable manual jobs store one result and preserve automatic schedule", asy
       (await db().monitor.findUniqueOrThrow({ where: { id: m.id } }))
         .nextCheckAt,
     ).toEqual(m.nextCheckAt);
-    expect(await monitorUptime(m.id, 1)).toBe(100);
+    expect(await monitorUptime(m.id, null)).toBe(100);
+    await db().monitor.update({
+      where: { id: m.id },
+      data: { configVersion: { increment: 1 } },
+    });
+    expect(await monitorUptime(m.id, null)).toBe(100);
+    expect(await monitorUptime(m.id, new Date(Date.now() + 1000))).toBeNull();
     expect((await checkHistory(m.id)).checks).toHaveLength(1);
   } finally {
     await db().user.delete({ where: { id: user.id } });
