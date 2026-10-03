@@ -1,4 +1,7 @@
-import { test, expect, afterAll } from "vitest";
+import { test, expect, afterAll, vi } from "vitest";
+vi.mock("@/features/checks/checker", () => ({
+  resolveTarget: vi.fn(async () => ({})),
+}));
 import { db } from "@/lib/db";
 import {
   createMonitor,

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { normalizeUrl } from "@/lib/security/url";
 import { monitorInput } from "./schema";
+import { resolveTarget } from "@/features/checks/checker";
 export async function ownedMonitor(userId: string, id: string) {
   const monitor = await db().monitor.findFirst({ where: { id, userId } });
   if (!monitor)
@@ -11,6 +12,7 @@ export async function ownedMonitor(userId: string, id: string) {
 export async function createMonitor(userId: string, input: unknown) {
   const data = monitorInput.parse(input);
   const url = normalizeUrl(data.url);
+  await resolveTarget(url);
   return db().$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id=${userId} FOR UPDATE`;
     if (
@@ -31,6 +33,8 @@ export async function updateMonitor(
 ) {
   const data = monitorInput.parse(input);
   const url = normalizeUrl(data.url);
+  await ownedMonitor(userId, id);
+  await resolveTarget(url);
   return db().$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Monitor" WHERE id=${id} AND "userId"=${userId} FOR UPDATE`;
     const old = await tx.monitor.findFirst({ where: { id, userId } });
