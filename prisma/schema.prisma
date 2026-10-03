@@ -7,16 +7,17 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String       @id @default(cuid())
   name          String?
-  email         String?   @unique
-  emailVerified DateTime? @db.Timestamptz(3)
+  email         String?      @unique
+  emailVerified DateTime?    @db.Timestamptz(3)
   image         String?
-  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @db.Timestamptz(3)
   accounts      Account[]
   sessions      Session[]
   monitors      Monitor[]
+  statusPages   StatusPage[]
 }
 
 model Account {
@@ -64,35 +65,64 @@ enum MonitorStatus {
 }
 
 model Monitor {
-  id                   String        @id @default(cuid())
+  id                   String              @id @default(cuid())
   userId               String
   name                 String
   url                  String
   normalizedUrl        String
-  intervalMinutes      Int           @default(5)
-  timeoutMs            Int           @default(10000)
-  status               MonitorStatus @default(PENDING)
-  configVersion        Int           @default(1)
-  urlChangedAt         DateTime?     @db.Timestamptz(3)
-  lastCheckedAt        DateTime?     @db.Timestamptz(3)
-  nextCheckAt          DateTime?     @default(now()) @db.Timestamptz(3)
+  intervalMinutes      Int                 @default(5)
+  timeoutMs            Int                 @default(10000)
+  status               MonitorStatus       @default(PENDING)
+  configVersion        Int                 @default(1)
+  urlChangedAt         DateTime?           @db.Timestamptz(3)
+  lastCheckedAt        DateTime?           @db.Timestamptz(3)
+  nextCheckAt          DateTime?           @default(now()) @db.Timestamptz(3)
   lastResponseTimeMs   Int?
   lastHttpStatus       Int?
-  consecutiveSuccesses Int           @default(0)
-  consecutiveFailures  Int           @default(0)
-  firstFailureAt       DateTime?     @db.Timestamptz(3)
+  consecutiveSuccesses Int                 @default(0)
+  consecutiveFailures  Int                 @default(0)
+  firstFailureAt       DateTime?           @db.Timestamptz(3)
   leaseToken           String?
-  leaseExpiresAt       DateTime?     @db.Timestamptz(3)
+  leaseExpiresAt       DateTime?           @db.Timestamptz(3)
   checks               Check[]
   jobs                 CheckJob[]
   incidents            Incident[]
-  createdAt            DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt            DateTime      @updatedAt @db.Timestamptz(3)
-  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  statusPages          StatusPageMonitor[]
+  createdAt            DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime            @updatedAt @db.Timestamptz(3)
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, normalizedUrl])
   @@index([userId])
   @@index([status, nextCheckAt])
+}
+
+model StatusPage {
+  id          String              @id @default(cuid())
+  userId      String
+  name        String
+  slug        String              @unique
+  description String              @default("")
+  isPublished Boolean             @default(false)
+  createdAt   DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime            @updatedAt @db.Timestamptz(3)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  monitors    StatusPageMonitor[]
+
+  @@index([userId])
+}
+
+model StatusPageMonitor {
+  statusPageId String
+  monitorId    String
+  position     Int
+  displayName  String?
+  statusPage   StatusPage @relation(fields: [statusPageId], references: [id], onDelete: Cascade)
+  monitor      Monitor    @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@id([statusPageId, monitorId])
+  @@index([monitorId])
+  @@index([statusPageId, position])
 }
 
 enum CheckResult {

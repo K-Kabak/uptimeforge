@@ -1,4 +1,5 @@
 import { privateRoute, jsonBody } from "@/lib/http";
+import { revalidateTag } from "next/cache";
 import {
   ownedMonitor,
   updateMonitor,
@@ -16,5 +17,6 @@ export const PATCH = (request: Request, context: Context) =>
 export const DELETE = (request: Request, context: Context) =>
   privateRoute(request, async (userId) => {
     await deleteMonitor(userId, (await context.params).id);
+    revalidateTag("status-pages", { expire: 0 });
     return { deleted: true };
   });
