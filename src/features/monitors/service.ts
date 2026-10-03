@@ -40,6 +40,15 @@ export async function updateMonitor(
     const old = await tx.monitor.findFirst({ where: { id, userId } });
     if (!old) throw new AppError("MONITOR_NOT_FOUND", "Monitor not found", 404);
     const targetChanged = url !== old.normalizedUrl;
+    if (targetChanged)
+      await tx.incident.updateMany({
+        where: { monitorId: id, status: "OPEN" },
+        data: {
+          status: "RESOLVED",
+          resolvedAt: new Date(),
+          resolutionReason: "TARGET_CHANGED",
+        },
+      });
     await tx.checkJob.updateMany({
       where: { monitorId: id, status: { in: ["PENDING", "RUNNING"] } },
       data: { status: "CANCELLED" },
@@ -93,7 +102,13 @@ export async function setPaused(userId: string, id: string, paused: boolean) {
     return tx.monitor.update({
       where: { id },
       data: {
-        status: paused ? "PAUSED" : "PENDING",
+        status: paused
+          ? "PAUSED"
+          : (await tx.incident.count({
+                where: { monitorId: id, status: "OPEN" },
+              }))
+            ? "DOWN"
+            : "PENDING",
         leaseToken: null,
         leaseExpiresAt: null,
         nextCheckAt: paused ? null : new Date(),

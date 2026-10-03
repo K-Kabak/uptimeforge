@@ -11,7 +11,7 @@ The specification is authoritative. A phase is verified only by recorded checks,
 | 4 Secure checker        | Complete                                  |
 | 5 Persistence/analytics | Complete                                  |
 | 6 QStash pipeline       | Implemented; live queue/Redis blocked     |
-| 7 Incidents             | Pending                                   |
+| 7 Incidents             | Complete                                  |
 | 8 Email                 | Pending                                   |
 | 9 Status pages          | Pending                                   |
 | 10 Retention/lifecycle  | Pending                                   |
@@ -52,3 +52,5 @@ The specification is authoritative. A phase is verified only by recorded checks,
 - Phase 5: 58 cumulative tests passed; check persistence, idempotency, version fencing and analytics verified on PostgreSQL.
 
 - Phase 6: Dispatcher/outbox/signature rejection and lease takeover verified on PostgreSQL; provider deliveries not exercised without credentials.
+
+- Phase 7: 72 cumulative tests passed; PostgreSQL incident transitions, duplicate jobs, pause/resume and URL change verified; partial OPEN index applied.

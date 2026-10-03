@@ -85,6 +85,7 @@ model Monitor {
   leaseExpiresAt       DateTime?     @db.Timestamptz(3)
   checks               Check[]
   jobs                 CheckJob[]
+  incidents            Incident[]
   createdAt            DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt            DateTime      @updatedAt @db.Timestamptz(3)
   user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -139,21 +140,48 @@ model CheckJob {
 }
 
 model Check {
-  id            String      @id @default(cuid())
-  monitorId     String
-  jobId         String      @unique
-  configVersion Int
-  startedAt     DateTime    @db.Timestamptz(3)
-  finishedAt    DateTime    @db.Timestamptz(3)
-  durationMs    Int
-  result        CheckResult
-  httpStatus    Int?
-  errorCode     String?
-  errorMessage  String?
-  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
-  monitor       Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
-  job           CheckJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id                 String      @id @default(cuid())
+  monitorId          String
+  jobId              String      @unique
+  configVersion      Int
+  startedAt          DateTime    @db.Timestamptz(3)
+  finishedAt         DateTime    @db.Timestamptz(3)
+  durationMs         Int
+  result             CheckResult
+  httpStatus         Int?
+  errorCode          String?
+  errorMessage       String?
+  createdAt          DateTime    @default(now()) @db.Timestamptz(3)
+  monitor            Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  job                CheckJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  triggeredIncidents Incident[]  @relation("IncidentTrigger")
+  resolvedIncidents  Incident[]  @relation("IncidentResolve")
 
   @@index([monitorId, startedAt, id])
   @@index([createdAt])
+}
+
+enum IncidentStatus {
+  OPEN
+  RESOLVED
+}
+
+model Incident {
+  id               String         @id @default(cuid())
+  monitorId        String
+  configVersion    Int
+  status           IncidentStatus @default(OPEN)
+  startedAt        DateTime       @db.Timestamptz(3)
+  resolvedAt       DateTime?      @db.Timestamptz(3)
+  triggerCheckId   String?
+  resolveCheckId   String?
+  cause            String
+  resolutionReason String?
+  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime       @updatedAt @db.Timestamptz(3)
+  monitor          Monitor        @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  triggerCheck     Check?         @relation("IncidentTrigger", fields: [triggerCheckId], references: [id], onDelete: SetNull)
+  resolveCheck     Check?         @relation("IncidentResolve", fields: [resolveCheckId], references: [id], onDelete: SetNull)
+
+  @@index([monitorId, startedAt])
 }

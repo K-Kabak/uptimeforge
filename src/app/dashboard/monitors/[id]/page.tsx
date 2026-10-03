@@ -11,6 +11,8 @@ import {
 } from "@/features/checks/analytics";
 import { ResponseChart } from "@/components/charts/response-chart";
 import { CheckHistory } from "@/components/monitors/check-history";
+import { Incidents } from "@/components/monitors/incidents";
+import { db } from "@/lib/db";
 export default async function Details({
   params,
 }: {
@@ -19,6 +21,11 @@ export default async function Details({
   const user = await requireUser();
   const { id } = await params;
   const monitor = await ownedMonitor(user.id, id).catch(() => notFound());
+  const incidents = await db().incident.findMany({
+    where: { monitorId: id },
+    orderBy: { startedAt: "desc" },
+    take: 50,
+  });
   const [day, week, month, history, chart] = await Promise.all([
     monitorUptime(id, monitor.configVersion, "24h"),
     monitorUptime(id, monitor.configVersion, "7d"),
@@ -67,6 +74,7 @@ export default async function Details({
         nextCursor={history.nextCursor}
       />
       <h2 className="text-xl font-bold">Settings</h2>
+      <Incidents incidents={incidents} />
       <MonitorForm monitor={monitor} />
     </>
   );

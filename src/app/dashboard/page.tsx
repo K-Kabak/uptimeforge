@@ -9,5 +9,13 @@ export default async function Dashboard() {
     orderBy: { createdAt: "desc" },
   });
   const uptime = await dashboardUptime(monitors);
-  return <MonitorList monitors={monitors} uptime={uptime} />;
+  const active = await db().incident.count({
+    where: { monitor: { userId: user.id }, status: "OPEN" },
+  });
+  return (
+    <>
+      <p className="mb-4 text-sm">{active} active incidents</p>
+      <MonitorList monitors={monitors} uptime={uptime} />
+    </>
+  );
 }

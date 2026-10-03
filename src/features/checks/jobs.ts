@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { safeCheck } from "./checker";
+import { applyIncident } from "@/features/incidents/service";
 export async function reserveManualJob(userId: string, monitorId: string) {
   return db().$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Monitor" WHERE id=${monitorId} AND "userId"=${userId} FOR UPDATE`;
@@ -129,9 +130,11 @@ export async function runCheckJob(
         configVersion: job.configVersion,
       },
     });
+    const { state } = await applyIncident(tx, monitor, check);
     await tx.monitor.update({
       where: { id: monitor.id },
       data: {
+        ...state,
         lastCheckedAt: outcome.finishedAt,
         lastResponseTimeMs: outcome.durationMs,
         lastHttpStatus: outcome.httpStatus,
