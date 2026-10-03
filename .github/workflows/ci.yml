@@ -1,0 +1,82 @@
+name: Quality
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: uptimeforge
+          POSTGRES_PASSWORD: uptimeforge
+          POSTGRES_DB: uptimeforge_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U uptimeforge -d uptimeforge_test"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: [6379:6379]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://uptimeforge:uptimeforge@localhost:5432/uptimeforge_test
+      DIRECT_URL: postgresql://uptimeforge:uptimeforge@localhost:5432/uptimeforge_test
+      TEST_REDIS_URL: redis://localhost:6379/15
+      NEXTAUTH_SECRET: ci-only-test-session-secret-not-for-production
+      NEXTAUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Validate and generate Prisma
+        run: |
+          pnpm exec prisma validate
+          pnpm exec prisma generate
+          pnpm exec prisma migrate deploy
+          pnpm exec prisma migrate status
+          pnpm exec next typegen
+      - name: Quality gates
+        run: |
+          git diff --check
+          node scripts/check-secrets.mjs
+          pnpm format:check
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+      - name: Optimized application build
+        run: pnpm build
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Desktop and mobile E2E
+        run: pnpm test:e2e
+      - name: Check generated files remain reproducible
+        run: git diff --exit-code
+      - name: Upload failure traces
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-failures
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
