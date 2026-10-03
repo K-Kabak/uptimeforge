@@ -61,6 +61,10 @@ export async function runCheckJob(
       ["COMPLETED", "CANCELLED", "FAILED"].includes(freshJob.status)
     )
       return { result: freshJob?.check ?? null, monitor: null };
+    if (freshJob.createdAt.getTime() < now.getTime() - 300000) {
+      await tx.checkJob.update({ where: { id }, data: { status: "FAILED" } });
+      return { result: null, monitor: null };
+    }
     if (
       !monitor ||
       monitor.status === "PAUSED" ||
@@ -99,6 +103,8 @@ export async function runCheckJob(
     });
     const job = await tx.checkJob.findUnique({ where: { id } });
     if (!job || !monitor) return null;
+    if (!monitor.leaseExpiresAt || monitor.leaseExpiresAt < new Date())
+      return null;
     if (monitor.leaseToken !== token || job.leaseToken !== token) return null;
     if (
       monitor.configVersion !== job.configVersion ||

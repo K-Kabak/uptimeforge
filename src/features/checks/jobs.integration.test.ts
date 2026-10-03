@@ -66,4 +66,52 @@ test("configuration changes fence off an in-flight result", async () => {
     await db().user.delete({ where: { id: user.id } });
   }
 });
+test("lease takeover fences the old worker and prevents duplicate Checks", async () => {
+  const user = await db().user.create({ data: {} });
+  const monitor = await db().monitor.create({
+    data: {
+      userId: user.id,
+      name: "lease",
+      url: "https://example.com",
+      normalizedUrl: "https://example.com/",
+    },
+  });
+  let release: () => void = () => {};
+  let started: () => void = () => {};
+  const entered = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  try {
+    const job = await reserveManualJob(user.id, monitor.id);
+    const first = runCheckJob(job.id, async () => {
+      started();
+      await hold;
+      return success;
+    });
+    await entered;
+    await expect(
+      runCheckJob(job.id, async () => success),
+    ).rejects.toMatchObject({ code: "JOB_BUSY" });
+    await db().monitor.update({
+      where: { id: monitor.id },
+      data: { leaseExpiresAt: new Date(Date.now() - 1000) },
+    });
+    await runCheckJob(job.id, async () => ({ ...success, durationMs: 99 }));
+    release();
+    expect(await first).toBeNull();
+    expect(await db().check.count({ where: { monitorId: monitor.id } })).toBe(
+      1,
+    );
+    expect(
+      (await db().check.findFirstOrThrow({ where: { monitorId: monitor.id } }))
+        .durationMs,
+    ).toBe(99);
+  } finally {
+    release();
+    await db().user.delete({ where: { id: user.id } });
+  }
+});
 afterAll(async () => db().$disconnect());

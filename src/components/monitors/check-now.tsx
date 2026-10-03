@@ -19,7 +19,27 @@ export function CheckNow({
       const r = await fetch(`/api/monitors/${id}/check`, { method: "POST" });
       const b = await r.json();
       if (!r.ok) throw new Error(b.error.message);
-      setMessage(`${b.data.result} · ${b.data.durationMs} ms`);
+      setMessage("Check queued…");
+      for (let attempt = 0; attempt < 30; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const response = await fetch(
+          `/api/monitors/${id}/jobs/${b.data.jobId}`,
+        );
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error.message);
+        if (body.data.status === "COMPLETED") {
+          setMessage(
+            `${body.data.check.result} · ${body.data.check.durationMs} ms`,
+          );
+          break;
+        }
+        if (["CANCELLED", "FAILED"].includes(body.data.status)) {
+          setMessage("Check cancelled or expired. Please try again.");
+          break;
+        }
+        if (attempt === 29)
+          setMessage("Still queued. The result will appear in history.");
+      }
       router.refresh();
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Check failed");

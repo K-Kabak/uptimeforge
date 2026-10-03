@@ -6,6 +6,7 @@ export async function privateRoute(
   request: Request,
   action: (userId: string) => Promise<unknown>,
   limit = 30,
+  status = 200,
 ) {
   try {
     const user = await requireUser();
@@ -20,7 +21,7 @@ export async function privateRoute(
     }
     return Response.json(
       { data: await action(user.id) },
-      { headers: { "Cache-Control": "private, no-store" } },
+      { status, headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (error) {
     return errorResponse(error);

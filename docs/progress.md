@@ -10,7 +10,7 @@ The specification is authoritative. A phase is verified only by recorded checks,
 | 3 Monitor CRUD          | Implemented; Redis provider check blocked |
 | 4 Secure checker        | Complete                                  |
 | 5 Persistence/analytics | Complete                                  |
-| 6 QStash pipeline       | Pending                                   |
+| 6 QStash pipeline       | Implemented; live queue/Redis blocked     |
 | 7 Incidents             | Pending                                   |
 | 8 Email                 | Pending                                   |
 | 9 Status pages          | Pending                                   |
@@ -50,3 +50,5 @@ The specification is authoritative. A phase is verified only by recorded checks,
 - Phase 4: 49 checker security cases passed; real example.com HTTPS check returned 200; build passed.
 
 - Phase 5: 58 cumulative tests passed; check persistence, idempotency, version fencing and analytics verified on PostgreSQL.
+
+- Phase 6: Dispatcher/outbox/signature rejection and lease takeover verified on PostgreSQL; provider deliveries not exercised without credentials.

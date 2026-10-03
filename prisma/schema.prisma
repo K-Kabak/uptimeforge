@@ -114,22 +114,28 @@ enum JobStatus {
 }
 
 model CheckJob {
-  id             String    @id @default(cuid())
-  monitorId      String
-  configVersion  Int
-  source         String
-  status         JobStatus @default(PENDING)
-  scheduledAt    DateTime  @default(now()) @db.Timestamptz(3)
-  leaseToken     String?
-  leaseExpiresAt DateTime? @db.Timestamptz(3)
-  attempts       Int       @default(0)
-  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
-  monitor        Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
-  check          Check?
+  id                String    @id @default(cuid())
+  monitorId         String
+  configVersion     Int
+  source            String
+  status            JobStatus @default(PENDING)
+  scheduledAt       DateTime  @default(now()) @db.Timestamptz(3)
+  leaseToken        String?
+  leaseExpiresAt    DateTime? @db.Timestamptz(3)
+  attempts          Int       @default(0)
+  publishedAt       DateTime? @db.Timestamptz(3)
+  providerMessageId String?
+  publishToken      String?
+  publishExpiresAt  DateTime? @db.Timestamptz(3)
+  publishAttempts   Int       @default(0)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
+  monitor           Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  check             Check?
 
   @@index([monitorId, status])
   @@index([status, createdAt])
+  @@index([status, publishedAt, publishExpiresAt])
 }
 
 model Check {

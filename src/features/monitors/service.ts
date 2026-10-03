@@ -40,6 +40,10 @@ export async function updateMonitor(
     const old = await tx.monitor.findFirst({ where: { id, userId } });
     if (!old) throw new AppError("MONITOR_NOT_FOUND", "Monitor not found", 404);
     const targetChanged = url !== old.normalizedUrl;
+    await tx.checkJob.updateMany({
+      where: { monitorId: id, status: { in: ["PENDING", "RUNNING"] } },
+      data: { status: "CANCELLED" },
+    });
     return tx.monitor.update({
       where: { id },
       data: {
@@ -47,6 +51,8 @@ export async function updateMonitor(
         url,
         normalizedUrl: url,
         configVersion: { increment: 1 },
+        leaseToken: null,
+        leaseExpiresAt: null,
         nextCheckAt: old.status === "PAUSED" ? null : new Date(),
         ...(targetChanged
           ? {
@@ -71,6 +77,11 @@ export async function setPaused(userId: string, id: string, paused: boolean) {
     const monitor = await tx.monitor.findFirst({ where: { id, userId } });
     if (!monitor)
       throw new AppError("MONITOR_NOT_FOUND", "Monitor not found", 404);
+    if (paused === (monitor.status === "PAUSED")) return monitor;
+    await tx.checkJob.updateMany({
+      where: { monitorId: id, status: { in: ["PENDING", "RUNNING"] } },
+      data: { status: "CANCELLED" },
+    });
     if (
       !paused &&
       monitor.status === "PAUSED" &&
@@ -83,6 +94,8 @@ export async function setPaused(userId: string, id: string, paused: boolean) {
       where: { id },
       data: {
         status: paused ? "PAUSED" : "PENDING",
+        leaseToken: null,
+        leaseExpiresAt: null,
         nextCheckAt: paused ? null : new Date(),
         configVersion: { increment: 1 },
         consecutiveFailures: 0,
