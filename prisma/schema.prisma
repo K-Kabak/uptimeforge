@@ -81,6 +81,10 @@ model Monitor {
   consecutiveSuccesses Int           @default(0)
   consecutiveFailures  Int           @default(0)
   firstFailureAt       DateTime?     @db.Timestamptz(3)
+  leaseToken           String?
+  leaseExpiresAt       DateTime?     @db.Timestamptz(3)
+  checks               Check[]
+  jobs                 CheckJob[]
   createdAt            DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt            DateTime      @updatedAt @db.Timestamptz(3)
   user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -88,4 +92,62 @@ model Monitor {
   @@unique([userId, normalizedUrl])
   @@index([userId])
   @@index([status, nextCheckAt])
+}
+
+enum CheckResult {
+  SUCCESS
+  HTTP_ERROR
+  TIMEOUT
+  DNS_ERROR
+  TLS_ERROR
+  CONNECTION_ERROR
+  BLOCKED_TARGET
+  INTERNAL_ERROR
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+model CheckJob {
+  id             String    @id @default(cuid())
+  monitorId      String
+  configVersion  Int
+  source         String
+  status         JobStatus @default(PENDING)
+  scheduledAt    DateTime  @default(now()) @db.Timestamptz(3)
+  leaseToken     String?
+  leaseExpiresAt DateTime? @db.Timestamptz(3)
+  attempts       Int       @default(0)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
+  monitor        Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  check          Check?
+
+  @@index([monitorId, status])
+  @@index([status, createdAt])
+}
+
+model Check {
+  id            String      @id @default(cuid())
+  monitorId     String
+  jobId         String      @unique
+  configVersion Int
+  startedAt     DateTime    @db.Timestamptz(3)
+  finishedAt    DateTime    @db.Timestamptz(3)
+  durationMs    Int
+  result        CheckResult
+  httpStatus    Int?
+  errorCode     String?
+  errorMessage  String?
+  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
+  monitor       Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  job           CheckJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId, startedAt, id])
+  @@index([createdAt])
 }

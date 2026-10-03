@@ -2,22 +2,22 @@
 
 The specification is authoritative. A phase is verified only by recorded checks, never by provider mocks alone.
 
-| Phase                   | Status                       |
-| ----------------------- | ---------------------------- |
-| 0 Repository            | Complete: remote main pushed |
-| 1 Foundation            | Pending                      |
-| 2 Database/auth         | Pending                      |
-| 3 Monitor CRUD          | Pending                      |
-| 4 Secure checker        | Pending                      |
-| 5 Persistence/analytics | Pending                      |
-| 6 QStash pipeline       | Pending                      |
-| 7 Incidents             | Pending                      |
-| 8 Email                 | Pending                      |
-| 9 Status pages          | Pending                      |
-| 10 Retention/lifecycle  | Pending                      |
-| 11 UX                   | Pending                      |
-| 12 Test hardening       | Pending                      |
-| 13 CI                   | Pending                      |
+| Phase                   | Status                                    |
+| ----------------------- | ----------------------------------------- |
+| 0 Repository            | Complete: remote main pushed              |
+| 1 Foundation            | Complete                                  |
+| 2 Database/auth         | Implemented; OAuth live check blocked     |
+| 3 Monitor CRUD          | Implemented; Redis provider check blocked |
+| 4 Secure checker        | Complete                                  |
+| 5 Persistence/analytics | Complete                                  |
+| 6 QStash pipeline       | Pending                                   |
+| 7 Incidents             | Pending                                   |
+| 8 Email                 | Pending                                   |
+| 9 Status pages          | Pending                                   |
+| 10 Retention/lifecycle  | Pending                                   |
+| 11 UX                   | Pending                                   |
+| 12 Test hardening       | Pending                                   |
+| 13 CI                   | Pending                                   |
 
 ## Decisions
 
@@ -40,3 +40,13 @@ The specification is authoritative. A phase is verified only by recorded checks,
 - Phase 0: Git initialized with configured author; public repository created; main pushed.
 - Phase 1: Node 24.21.0; lint/typecheck/unit test/format/build verified locally.
 - PostgreSQL 17 container is available at localhost:55432 (development only).
+
+- Phase 1: Local lint, format, typecheck, unit test and build passed under Node 24.
+
+- Phase 2: Auth migration applied on development and test PostgreSQL; adapter integration and guard tests passed. Real OAuth credentials missing.
+
+- Phase 3: CRUD, ownership and concurrent 10-monitor limit tests passed on PostgreSQL. Redis provider credentials missing.
+
+- Phase 4: 49 checker security cases passed; real example.com HTTPS check returned 200; build passed.
+
+- Phase 5: 58 cumulative tests passed; check persistence, idempotency, version fencing and analytics verified on PostgreSQL.

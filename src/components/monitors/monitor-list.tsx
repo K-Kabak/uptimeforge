@@ -1,6 +1,12 @@
 import Link from "next/link";
 import type { Monitor } from "@prisma/client";
-export function MonitorList({ monitors }: { monitors: Monitor[] }) {
+export function MonitorList({
+  monitors,
+  uptime,
+}: {
+  monitors: Monitor[];
+  uptime?: { average: number | null; values: Record<string, number | null> };
+}) {
   return (
     <>
       <div className="flex items-center justify-between">
@@ -13,7 +19,9 @@ export function MonitorList({ monitors }: { monitors: Monitor[] }) {
         </Link>
       </div>
       <p className="my-6 opacity-70">
-        {monitors.length} monitors ·{" "}
+        Average 24h uptime:{" "}
+        {uptime?.average == null ? "No data" : `${uptime.average.toFixed(2)}%`}{" "}
+        · {monitors.length} monitors ·{" "}
         {monitors.filter((m) => m.status === "UP").length} operational ·{" "}
         {monitors.filter((m) => m.status === "DOWN").length} down
       </p>
@@ -34,6 +42,14 @@ export function MonitorList({ monitors }: { monitors: Monitor[] }) {
                 <p className="text-sm opacity-60">{new URL(m.url).hostname}</p>
               </div>
               <span className="font-mono">{m.status}</span>
+              <span className="text-sm">
+                24h{" "}
+                {uptime?.values[m.id] == null
+                  ? "No data"
+                  : `${uptime.values[m.id]!.toFixed(2)}%`}{" "}
+                · {m.lastResponseTimeMs ?? "—"} ms · Last checked{" "}
+                {m.lastCheckedAt?.toISOString() ?? "never"}
+              </span>
             </Link>
           ))}
         </div>

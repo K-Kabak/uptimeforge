@@ -4,6 +4,13 @@ import { ownedMonitor } from "@/features/monitors/service";
 import { MonitorForm } from "@/components/monitors/monitor-form";
 import { MonitorActions } from "@/components/monitors/monitor-actions";
 import { CheckNow } from "@/components/monitors/check-now";
+import {
+  monitorUptime,
+  checkHistory,
+  responseChart,
+} from "@/features/checks/analytics";
+import { ResponseChart } from "@/components/charts/response-chart";
+import { CheckHistory } from "@/components/monitors/check-history";
 export default async function Details({
   params,
 }: {
@@ -12,6 +19,13 @@ export default async function Details({
   const user = await requireUser();
   const { id } = await params;
   const monitor = await ownedMonitor(user.id, id).catch(() => notFound());
+  const [day, week, month, history, chart] = await Promise.all([
+    monitorUptime(id, monitor.configVersion, "24h"),
+    monitorUptime(id, monitor.configVersion, "7d"),
+    monitorUptime(id, monitor.configVersion, "30d"),
+    checkHistory(id),
+    responseChart(id, monitor.configVersion),
+  ]);
   return (
     <>
       <h1 className="text-3xl font-bold">{monitor.name}</h1>
@@ -19,6 +33,39 @@ export default async function Details({
       <p className="mt-4 font-mono">{monitor.status}</p>
       <MonitorActions id={id} paused={monitor.status === "PAUSED"} />
       <CheckNow id={id} disabled={monitor.status === "PAUSED"} />
+      {monitor.urlChangedAt && (
+        <p className="my-4">
+          URL changed on {monitor.urlChangedAt.toISOString()}. Current uptime
+          uses the new target.
+        </p>
+      )}
+      <div className="my-8 grid gap-4 sm:grid-cols-3">
+        {[
+          ["24h", day],
+          ["7d", week],
+          ["30d", month],
+        ].map(([label, value]) => (
+          <div
+            key={String(label)}
+            className="rounded-xl border border-slate-400/20 p-6"
+          >
+            <p>{label} uptime</p>
+            <p className="mt-2 text-3xl font-semibold">
+              {typeof value === "number" ? `${value.toFixed(2)}%` : "No data"}
+            </p>
+          </div>
+        ))}
+      </div>
+      <h2 className="text-xl font-semibold">Response time</h2>
+      <ResponseChart data={chart} />
+      <CheckHistory
+        monitorId={id}
+        initial={history.checks.map((c) => ({
+          ...c,
+          startedAt: c.startedAt.toISOString(),
+        }))}
+        nextCursor={history.nextCursor}
+      />
       <h2 className="text-xl font-bold">Settings</h2>
       <MonitorForm monitor={monitor} />
     </>
