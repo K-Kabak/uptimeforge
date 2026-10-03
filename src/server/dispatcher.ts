@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { redis } from "@/lib/redis";
 import { publishCheck } from "@/lib/queue";
 import { log } from "@/lib/logger";
+import { relayNotifications } from "@/features/notifications/service";
 export function nextCheckAt(id: string, intervalMinutes: number, now: Date) {
   const jitter =
     createHash("sha256")
@@ -127,6 +128,7 @@ export async function dispatch() {
   let published = 0;
   try {
     await recoverJobs();
+    await relayNotifications();
     while (Date.now() - start < 30000) {
       const jobs = await reserveDue();
       reserved += jobs.length;

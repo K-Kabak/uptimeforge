@@ -167,21 +167,56 @@ enum IncidentStatus {
 }
 
 model Incident {
-  id               String         @id @default(cuid())
+  id               String                 @id @default(cuid())
   monitorId        String
   configVersion    Int
-  status           IncidentStatus @default(OPEN)
-  startedAt        DateTime       @db.Timestamptz(3)
-  resolvedAt       DateTime?      @db.Timestamptz(3)
+  status           IncidentStatus         @default(OPEN)
+  startedAt        DateTime               @db.Timestamptz(3)
+  resolvedAt       DateTime?              @db.Timestamptz(3)
   triggerCheckId   String?
   resolveCheckId   String?
   cause            String
   resolutionReason String?
-  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
-  updatedAt        DateTime       @updatedAt @db.Timestamptz(3)
-  monitor          Monitor        @relation(fields: [monitorId], references: [id], onDelete: Cascade)
-  triggerCheck     Check?         @relation("IncidentTrigger", fields: [triggerCheckId], references: [id], onDelete: SetNull)
-  resolveCheck     Check?         @relation("IncidentResolve", fields: [resolveCheckId], references: [id], onDelete: SetNull)
+  deliveries       NotificationDelivery[]
+  createdAt        DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime               @updatedAt @db.Timestamptz(3)
+  monitor          Monitor                @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  triggerCheck     Check?                 @relation("IncidentTrigger", fields: [triggerCheckId], references: [id], onDelete: SetNull)
+  resolveCheck     Check?                 @relation("IncidentResolve", fields: [resolveCheckId], references: [id], onDelete: SetNull)
 
   @@index([monitorId, startedAt])
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENDING
+  ACCEPTED
+  FAILED
+  UNKNOWN
+  SKIPPED
+  CANCELLED
+}
+
+model NotificationDelivery {
+  id               String         @id @default(cuid())
+  incidentId       String
+  kind             String
+  channel          String         @default("EMAIL")
+  recipient        String?
+  deduplicationKey String         @unique
+  payload          Json
+  status           DeliveryStatus @default(PENDING)
+  attempts         Int            @default(0)
+  firstAttemptAt   DateTime?      @db.Timestamptz(3)
+  nextAttemptAt    DateTime       @default(now()) @db.Timestamptz(3)
+  leaseToken       String?
+  leaseExpiresAt   DateTime?      @db.Timestamptz(3)
+  publishedAt      DateTime?      @db.Timestamptz(3)
+  providerId       String?
+  lastError        String?
+  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime       @updatedAt @db.Timestamptz(3)
+  incident         Incident       @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
 }
