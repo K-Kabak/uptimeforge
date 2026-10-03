@@ -72,7 +72,12 @@ export async function relayChecks(
     take: 100,
   });
   let count = 0;
-  for (let offset = 0; offset < jobs.length; offset += 10) {
+  const deadline = Date.now() + 20000;
+  for (
+    let offset = 0;
+    offset < jobs.length && Date.now() < deadline;
+    offset += 10
+  ) {
     await Promise.all(
       jobs.slice(offset, offset + 10).map(async (job) => {
         const token = randomUUID();

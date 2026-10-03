@@ -2,6 +2,8 @@ import { Client, Receiver } from "@upstash/qstash";
 import { z } from "zod";
 import { appUrl, requireEnv } from "./env";
 import { AppError, errorResponse } from "./errors";
+import { boundedBody } from "./body";
+import { within } from "./deadline";
 export function queue() {
   return new Client({
     token: requireEnv("QSTASH_TOKEN"),
@@ -10,14 +12,17 @@ export function queue() {
   });
 }
 export async function publishCheck(jobId: string) {
-  const response = await queue().publishJSON({
-    url: new URL("/api/internal/check", appUrl()).href,
-    body: { version: 1, jobId },
-    deduplicationId: `check:${jobId}`,
-    retries: 5,
-    timeout: 30,
-    flowControl: { key: "uptimeforge-checks", parallelism: 10 },
-  });
+  const response = await within(
+    queue().publishJSON({
+      url: new URL("/api/internal/check", appUrl()).href,
+      body: { version: 1, jobId },
+      deduplicationId: `check:${jobId}`,
+      retries: 5,
+      timeout: 30,
+      flowControl: { key: "uptimeforge-checks", parallelism: 10 },
+    }),
+    4000,
+  );
   return "messageId" in response ? response.messageId : null;
 }
 export const jobPayload = z
@@ -32,9 +37,7 @@ export async function signedRoute(
     const signature = request.headers.get("upstash-signature");
     if (!signature)
       throw new AppError("INVALID_SIGNATURE", "Queue signature required", 401);
-    const raw = await request.text();
-    if (raw.length > 16384)
-      throw new AppError("PAYLOAD_TOO_LARGE", "Queue payload too large", 413);
+    const raw = await boundedBody(request);
     const receiver = new Receiver({
       currentSigningKey: requireEnv("QSTASH_CURRENT_SIGNING_KEY"),
       nextSigningKey: requireEnv("QSTASH_NEXT_SIGNING_KEY"),

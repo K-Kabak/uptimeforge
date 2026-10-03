@@ -6,6 +6,7 @@ import type { LookupFunction } from "node:net";
 import ipaddr from "ipaddr.js";
 import { AppError } from "@/lib/errors";
 import { isPublicIp, normalizeUrl } from "@/lib/security/url";
+import { within } from "@/lib/deadline";
 export type CheckResultName =
   | "SUCCESS"
   | "HTTP_ERROR"
@@ -47,7 +48,7 @@ export async function resolveTarget(
             family: ipaddr.parse(hostname).kind() === "ipv4" ? 4 : 6,
           },
         ]
-      : await resolve(hostname);
+      : await within(resolve(hostname), 5000);
   } catch {
     throw new AppError("DNS_ERROR", "Could not resolve host");
   }

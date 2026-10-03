@@ -7,6 +7,7 @@ import { appUrl, requireEnv } from "@/lib/env";
 import { queue } from "@/lib/queue";
 import { log } from "@/lib/logger";
 import { incidentEmail, emailPayload } from "./templates";
+import { within } from "@/lib/deadline";
 export async function recordNotification(
   tx: Prisma.TransactionClient,
   incident: Incident,
@@ -52,9 +53,12 @@ export const sendEmail: EmailSender = async (payload, recipient, key) => {
       "Email sender is not configured",
       503,
     );
-  const result = await new Resend(requireEnv("RESEND_API_KEY")).emails.send(
-    { ...payload, to: recipient },
-    { idempotencyKey: key },
+  const result = await within(
+    new Resend(requireEnv("RESEND_API_KEY")).emails.send(
+      { ...payload, to: recipient },
+      { idempotencyKey: key },
+    ),
+    20000,
   );
   if (result.error)
     throw new AppError(
@@ -83,6 +87,13 @@ export async function deliverNotification(
       )
     )
       return null;
+    if (item.incident.resolutionReason === "TARGET_CHANGED") {
+      await tx.notificationDelivery.update({
+        where: { id },
+        data: { status: "CANCELLED", leaseToken: null, leaseExpiresAt: null },
+      });
+      return null;
+    }
     if (item.leaseExpiresAt && item.leaseExpiresAt > now)
       throw new AppError(
         "DELIVERY_BUSY",
@@ -205,15 +216,20 @@ export async function relayNotifications() {
     orderBy: { createdAt: "asc" },
     take: 20,
   });
+  const deadline = Date.now() + 15000;
   for (const item of pending) {
+    if (Date.now() >= deadline) break;
     try {
-      await queue().publishJSON({
-        url: new URL("/api/internal/notify", appUrl()).href,
-        body: { version: 1, jobId: item.id },
-        deduplicationId: `notify:${item.id}:${item.attempts}`,
-        retries: 5,
-        timeout: 30,
-      });
+      await within(
+        queue().publishJSON({
+          url: new URL("/api/internal/notify", appUrl()).href,
+          body: { version: 1, jobId: item.id },
+          deduplicationId: `notify:${item.id}:${item.attempts}`,
+          retries: 5,
+          timeout: 30,
+        }),
+        4000,
+      );
       await db().notificationDelivery.updateMany({
         where: { id: item.id, status: "PENDING" },
         data: { publishedAt: now },

@@ -100,3 +100,72 @@ test("uncertain delivery outside provider key window is never automatically rese
   }
 });
 afterAll(async () => db().$disconnect());
+test("uncertain provider acceptance retries the same key, and parallel claims send once", async () => {
+  const user = await db().user.create({ data: {} });
+  const monitor = await db().monitor.create({
+    data: {
+      userId: user.id,
+      name: "Retry",
+      url: "https://example.com",
+      normalizedUrl: "https://example.com/",
+    },
+  });
+  try {
+    const incident = await db().incident.create({
+      data: {
+        monitorId: monitor.id,
+        configVersion: 1,
+        startedAt: new Date(),
+        cause: "TIMEOUT",
+      },
+    });
+    const delivery = await db().notificationDelivery.create({
+      data: {
+        incidentId: incident.id,
+        kind: "OPENED",
+        recipient: "test@example.test",
+        deduplicationKey: crypto.randomUUID(),
+        payload: incidentEmail(
+          "OPENED",
+          "Retry",
+          "http://localhost:3000",
+          new Date(),
+          "test@example.test",
+        ),
+      },
+    });
+    const keys: string[] = [];
+    await expect(
+      deliverNotification(delivery.id, async (_payload, _recipient, key) => {
+        keys.push(key);
+        throw new Error("Accepted but response lost");
+      }),
+    ).rejects.toMatchObject({ code: "EMAIL_RETRY" });
+    await db().notificationDelivery.update({
+      where: { id: delivery.id },
+      data: { nextAttemptAt: new Date(0) },
+    });
+    const results = await Promise.allSettled(
+      [1, 2].map(() =>
+        deliverNotification(delivery.id, async (_payload, _recipient, key) => {
+          keys.push(key);
+          return "provider-id";
+        }),
+      ),
+    );
+    expect(results.some((result) => result.status === "fulfilled")).toBe(true);
+    expect(keys).toEqual([
+      delivery.deduplicationKey,
+      delivery.deduplicationKey,
+    ]);
+    expect(
+      (
+        await db().notificationDelivery.findUniqueOrThrow({
+          where: { id: delivery.id },
+        })
+      ).status,
+    ).toBe("ACCEPTED");
+  } finally {
+    await db().user.delete({ where: { id: user.id } });
+  }
+});

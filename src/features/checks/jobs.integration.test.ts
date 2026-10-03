@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { reserveManualJob, runCheckJob } from "./jobs";
 import type { CheckResult } from "./checker";
 import { monitorUptime, checkHistory } from "./analytics";
+import { setPaused } from "@/features/monitors/service";
 export const success: CheckResult = {
   startedAt: new Date(),
   finishedAt: new Date(),
@@ -121,3 +122,52 @@ test("lease takeover fences the old worker and prevents duplicate Checks", async
   }
 });
 afterAll(async () => db().$disconnect());
+test("pausing a queued monitor makes a late delivery a no-op", async () => {
+  const user = await db().user.create({ data: {} });
+  const monitor = await db().monitor.create({
+    data: {
+      userId: user.id,
+      name: "Paused",
+      url: "https://example.com",
+      normalizedUrl: "https://example.com/",
+    },
+  });
+  try {
+    const job = await reserveManualJob(user.id, monitor.id);
+    await setPaused(user.id, monitor.id, true);
+    const checker = vi.fn(async () => success);
+    expect(await runCheckJob(job.id, checker)).toBeNull();
+    expect(checker).not.toHaveBeenCalled();
+    expect(
+      (await db().checkJob.findUniqueOrThrow({ where: { id: job.id } })).status,
+    ).toBe("CANCELLED");
+  } finally {
+    await db().user.delete({ where: { id: user.id } });
+  }
+});
+test("deletion during HTTP discards the result and late redelivery does not connect", async () => {
+  const user = await db().user.create({ data: {} });
+  const monitor = await db().monitor.create({
+    data: {
+      userId: user.id,
+      name: "Deleted",
+      url: "https://example.com",
+      normalizedUrl: "https://example.com/",
+    },
+  });
+  try {
+    const job = await reserveManualJob(user.id, monitor.id);
+    const checker = vi.fn(async () => {
+      await db().monitor.delete({ where: { id: monitor.id } });
+      return success;
+    });
+    expect(await runCheckJob(job.id, checker)).toBeNull();
+    expect(await runCheckJob(job.id, checker)).toBeNull();
+    expect(checker).toHaveBeenCalledTimes(1);
+    expect(await db().check.count({ where: { monitorId: monitor.id } })).toBe(
+      0,
+    );
+  } finally {
+    await db().user.delete({ where: { id: user.id } });
+  }
+});

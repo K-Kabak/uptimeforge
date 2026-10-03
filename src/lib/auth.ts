@@ -3,10 +3,25 @@ import GitHub from "next-auth/providers/github";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { db } from "./db";
 import { AppError } from "./errors";
+import { requireEnv } from "./env";
+import { log } from "./logger";
 export function authOptions(): NextAuthOptions {
   return {
-    adapter: PrismaAdapter(db()),
-    secret: process.env.NEXTAUTH_SECRET,
+    adapter: {
+      ...PrismaAdapter(db()),
+      async deleteSession(sessionToken) {
+        await db().session.deleteMany({ where: { sessionToken } });
+      },
+    },
+    secret: requireEnv("NEXTAUTH_SECRET"),
+    logger: {
+      error(code) {
+        log("auth_error", { result: code });
+      },
+      warn(code) {
+        log("auth_warning", { result: code });
+      },
+    },
     session: { strategy: "database" },
     providers: [
       GitHub({

@@ -16,7 +16,7 @@ The specification is authoritative. A phase is verified only by recorded checks,
 | 9 Status pages          | Complete                                  |
 | 10 Retention/lifecycle  | Complete                                  |
 | 11 UX                   | Complete                                  |
-| 12 Test hardening       | Pending                                   |
+| 12 Test hardening       | Complete                                  |
 | 13 CI                   | Pending                                   |
 
 ## Decisions
@@ -62,3 +62,5 @@ The specification is authoritative. A phase is verified only by recorded checks,
 - Phase 10: 87 cumulative tests passed; batched retention preserves incidents, account cascade and in-flight email deletion guard verified on PostgreSQL.
 
 - Phase 11: 87 tests, lint, format, typecheck and full optimized build passed. Responsive forms, themes, keyboard focus, toast feedback and target-only analytics reset implemented. Shared dispatcher DB fixtures run serially; concurrency remains explicitly tested.
+
+- Phase 12: 105 Vitest tests and 8 desktop/mobile E2E cases passed with real PostgreSQL/Redis and optimized Next server. Real cryptographic signature verification and safe external HTTP exercised; hosted OAuth/QStash/Resend remain unverified.

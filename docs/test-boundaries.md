@@ -1,0 +1,11 @@
+# Verification boundaries
+
+The default Vitest suite runs unit/security tests and integration tests against real PostgreSQL and Redis. Dispatcher tests share a database and run files serially; concurrent claims, limits and fencing are explicitly tested inside each case. Use an isolated `uptimeforge_test` database. Redis REST is a test bridge to a real local Redis server; this does not verify the Upstash service.
+
+Playwright starts the optimized Next.js build on localhost, uses real database sessions without an application authentication bypass, and tests desktop and mobile layouts, CRUD/pause, publication/unpublication, privacy, ownership/origin/SSRF rejection, signed check delivery/idempotency and account deletion. The manual worker case performs an actual safe external HTTP request; success, HTTP failure or timeout are all valid persisted endpoint outcomes. QStash signatures use locally generated test keys and the real SDK verifier. No hosted QStash scheduler is exercised.
+
+Critical coverage includes DNS/IP/redirect validation before connection, pinned DNS and peer verification, incident thresholds, transaction-level duplicate prevention, lease fencing, outbox recovery, unchanged manual scheduling, check-based uptime, active-monitor/status-page limits, publication privacy and retention/account cascades. No artificial coverage percentage is required. Real OAuth redirects and tokens, hosted Neon connection limits, Upstash/QStash quotas and delivery behavior, real Resend acceptance/domain verification and Vercel runtime behavior remain external checks requiring credentials and Phase 14 authorization.
+
+Email test doubles verify payloads, durable event uniqueness, retry keys and local delivery state; they cannot prove exactly-once delivery by a provider. Uncertain deliveries stop before the provider's 24-hour idempotency horizon and require reconciliation. Account deletion waits for an active sending lease. The app does not claim production readiness from mocks.
+
+CSP restricts frames, objects, forms and connections. Next/next-themes bootstrap scripts still require inline scripts; a nonce policy would require additional cache/runtime validation. Production provider checks and smoke tests have intentionally not been run.

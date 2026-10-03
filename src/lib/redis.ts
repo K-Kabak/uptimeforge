@@ -18,5 +18,6 @@ export async function rateLimit(key: string, limit: number, windowMs: number) {
       "RATE_LIMITED",
       `Too many requests. Try again in ${Math.ceil(remaining / 1000)} seconds`,
       429,
+      Math.max(1, Math.ceil(remaining / 1000)),
     );
 }

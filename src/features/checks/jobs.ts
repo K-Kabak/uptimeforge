@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { safeCheck } from "./checker";
 import { applyIncident } from "@/features/incidents/service";
+import { log } from "@/lib/logger";
 export async function reserveManualJob(userId: string, monitorId: string) {
   return db().$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Monitor" WHERE id=${monitorId} AND "userId"=${userId} FOR UPDATE`;
@@ -97,7 +98,7 @@ export async function runCheckJob(
   });
   if (!claim.monitor) return claim.result;
   const outcome = await checker(claim.monitor.url, claim.monitor.timeoutMs);
-  return db().$transaction(async (tx) => {
+  const result = await db().$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Monitor" WHERE id=${claim.monitor!.id} FOR UPDATE`;
     const monitor = await tx.monitor.findUnique({
       where: { id: claim.monitor!.id },
@@ -148,4 +149,11 @@ export async function runCheckJob(
     });
     return check;
   });
+  log(result ? "check_completed" : "check_discarded", {
+    monitorId: claim.monitor.id,
+    jobId: id,
+    duration: outcome.durationMs,
+    result: outcome.result,
+  });
+  return result;
 }
