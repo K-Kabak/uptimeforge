@@ -15,6 +15,9 @@
     "node": "24.x"
   },
   "scripts": {
+    "production:preflight": "tsx scripts/production-preflight.ts",
+    "production:migrate": "tsx scripts/production-migrate.ts",
+    "screenshots": "tsx scripts/screenshots.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
