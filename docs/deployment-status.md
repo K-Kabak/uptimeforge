@@ -6,7 +6,7 @@ Phase 14 is in progress. Phase 15 documentation is prepared; release remains blo
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | GitHub                        | Public K-Kabak/uptimeforge; main; existing CI green before this deployment-preparation milestone                                          |
 | Vercel                        | Project uptimeforge created in k-kabaks-projects, Hobby; GitHub repository connected; framework Next.js; Node 24                          |
-| Production URL                | No successful production deployment yet                                                                                                   |
+| Production URL                | Git-triggered production builds attempted; preflight rejects missing provider variables; no successful deployment                         |
 | Reserved domain / environment | uptimeforge.vercel.app verified by Vercel; APP_URL, NEXTAUTH_URL and encrypted random NEXTAUTH_SECRET configured for production           |
 | Neon                          | No existing marketplace resource found; free_v3 provisioning blocked by browser terms acceptance                                          |
 | Upstash Redis                 | No existing marketplace resource found; Free provisioning blocked by browser terms acceptance; intended autoUpgrade=false, prodPack=false |
