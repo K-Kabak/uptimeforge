@@ -32,6 +32,14 @@ Deploy only after environment and migrations are ready. Inspect the actual build
 
 ## Background jobs
 
+### Explicit email sandbox for bounded smoke tests
+
+Without an owned domain, set `RESEND_MODE=sandbox`, `EMAIL_FROM=UptimeForge <onboarding@resend.dev>` and encrypted `RESEND_SANDBOX_RECIPIENT` to the actual Resend account-owner address. Use a dedicated Sending-access API key. This is an explicitly restricted smoke environment, not certification of general-user production alerts. The default mode remains `production`, which rejects resend.dev senders.
+
+The application skips other recipients with a durable reason; it does not redirect their alerts to the operator. Queued deliveries recheck the policy before claiming, and the sender checks again before the provider request. Dashboard users see a sandbox notice without exposing the allowlisted address. Change the mode and sender only after verifying an owned domain. See [Resend's account-owner restriction](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain).
+
+On 4 October 2026 a real request through the application's email sender was accepted (`01a1070d-1d85-713f-a0d8-a23d1da65194`); the authenticated Resend dashboard showed both Sent and Delivered events. This proves account-owner sandbox delivery, not arbitrary-recipient sending or the complete incident pipeline.
+
 The schedules script defaults to a dry run. After successful deployment and capacity authorization, run it with the production environment and `--apply` to upsert `uptimeforge-dispatch` (every minute) and `uptimeforge-cleanup` (02:00 UTC daily). Inspect existing schedules first, including their destinations, and confirm exactly one matching schedule of each kind. A daily UTC cleanup stays at 02:00 UTC across DST changes.
 
 Confirm real signed dispatch calls, durable publication, check completion and nextCheckAt movement. Exercise actual provider retry/redelivery without fabricating endpoint failures. Inspect QStash events/DLQ and application structured logs. Recovery must reclaim expired leases, fence old workers and leave completed jobs idempotent. Never hold a DB transaction during HTTP/email calls. Do not report schedule creation alone as automatic-check success.

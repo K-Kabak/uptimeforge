@@ -9,3 +9,7 @@ if (errors.length) {
 console.info(
   "Production configuration validated; provider connectivity and smoke tests still required.",
 );
+if (process.env.RESEND_MODE === "sandbox")
+  console.info(
+    "Email SANDBOX: account-owner smoke tests only; general production alerts are unavailable.",
+  );

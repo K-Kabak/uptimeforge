@@ -47,3 +47,20 @@ it("rejects missing credentials and sandbox email senders", () => {
     productionErrors({ ...configured, EMAIL_FROM: "onboarding@resend.dev" }),
   ).toContain("EMAIL_FROM: sender on a verified production domain required");
 });
+it("allows explicit smoke-only sandbox configuration, never an implicit fallback", () => {
+  expect(
+    productionErrors({
+      ...configured,
+      EMAIL_FROM: "onboarding@resend.dev",
+      RESEND_MODE: "sandbox",
+      RESEND_SANDBOX_RECIPIENT: "owner@example.test",
+    }),
+  ).toEqual([]);
+  expect(
+    productionErrors({
+      ...configured,
+      EMAIL_FROM: "onboarding@resend.dev",
+      RESEND_MODE: "sandbox",
+    }),
+  ).toContain("RESEND_SANDBOX_RECIPIENT: one account-owner email required");
+});

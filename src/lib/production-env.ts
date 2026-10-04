@@ -1,3 +1,4 @@
+import { emailPolicyErrors } from "./email-policy";
 const required = [
   "DATABASE_URL",
   "DIRECT_URL",
@@ -68,13 +69,7 @@ export function productionErrors(env: Record<string, string | undefined>) {
   errors.push(...productionDatabaseErrors(env));
   if ((env.NEXTAUTH_SECRET?.length ?? 0) < 32)
     errors.push("NEXTAUTH_SECRET: at least 32 characters required");
-  const sender =
-    env.EMAIL_FROM?.match(/<([^<>]+)>$/)?.[1] ?? env.EMAIL_FROM ?? "";
-  if (
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sender) ||
-    sender.endsWith("@resend.dev")
-  )
-    errors.push("EMAIL_FROM: sender on a verified production domain required");
+  errors.push(...emailPolicyErrors(env));
   if (env.QSTASH_URL && url("QSTASH_URL")?.protocol !== "https:")
     errors.push("QSTASH_URL: HTTPS required");
   return errors;

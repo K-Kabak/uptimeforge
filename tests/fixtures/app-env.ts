@@ -29,6 +29,8 @@ export function e2eServerEnv(inherited: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
     AUTH_GITHUB_SECRET: "",
     RESEND_API_KEY: "",
     EMAIL_FROM: "",
+    RESEND_MODE: "production",
+    RESEND_SANDBOX_RECIPIENT: "",
     VERCEL_ENV: "",
     VERCEL_URL: "",
     VERCEL_OIDC_TOKEN: "",

@@ -1,7 +1,7 @@
 import { test, expect, afterAll, vi } from "vitest";
 import { db } from "@/lib/db";
 import { reserveManualJob, runCheckJob } from "@/features/checks/jobs";
-import { deliverNotification } from "./service";
+import { deliverNotification, sendEmail } from "./service";
 import { incidentEmail } from "./templates";
 test("templates escape user-controlled text", () =>
   expect(
@@ -100,6 +100,62 @@ test("uncertain delivery outside provider key window is never automatically rese
   }
 });
 afterAll(async () => db().$disconnect());
+test("sandbox rechecks queued recipients before sending and never redirects them", async () => {
+  const user = await db().user.create({
+    data: { email: `sandbox-${crypto.randomUUID()}@example.test` },
+  });
+  const monitor = await db().monitor.create({
+    data: {
+      userId: user.id,
+      name: "Sandbox",
+      url: "https://example.com",
+      normalizedUrl: "https://example.com/",
+    },
+  });
+  try {
+    for (let i = 0; i < 2; i++) {
+      const job = await reserveManualJob(user.id, monitor.id);
+      await runCheckJob(job.id, async () => ({
+        startedAt: new Date(),
+        finishedAt: new Date(),
+        durationMs: 1,
+        result: "TIMEOUT",
+        httpStatus: null,
+        errorCode: "TIMEOUT",
+        errorMessage: "Timeout",
+      }));
+    }
+    const delivery = await db().notificationDelivery.findFirstOrThrow({
+      where: { incident: { monitorId: monitor.id } },
+    });
+    vi.stubEnv("RESEND_MODE", "sandbox");
+    vi.stubEnv("RESEND_SANDBOX_RECIPIENT", "owner@example.test");
+    const sender = vi.fn(async () => "must-not-send");
+    await deliverNotification(delivery.id, sender);
+    expect(sender).not.toHaveBeenCalled();
+    expect(
+      await db().notificationDelivery.findUniqueOrThrow({
+        where: { id: delivery.id },
+      }),
+    ).toMatchObject({ status: "SKIPPED", recipient: user.email, attempts: 0 });
+    await expect(
+      sendEmail(
+        incidentEmail(
+          "OPENED",
+          "Sandbox",
+          "https://example.com",
+          new Date(),
+          "onboarding@resend.dev",
+        ),
+        user.email!,
+        "blocked-key",
+      ),
+    ).rejects.toMatchObject({ code: "EMAIL_SANDBOX_BLOCKED" });
+  } finally {
+    vi.unstubAllEnvs();
+    await db().user.delete({ where: { id: user.id } });
+  }
+});
 test("uncertain provider acceptance retries the same key, and parallel claims send once", async () => {
   const user = await db().user.create({ data: {} });
   const monitor = await db().monitor.create({

@@ -31,6 +31,16 @@ export default async function DashboardLayout({
         </span>
       </header>
       <main id="main-content" className="py-10">
+        {process.env.RESEND_MODE === "sandbox" && (
+          <p
+            role="status"
+            className="mb-6 rounded-lg border border-amber-500 p-4 text-sm"
+          >
+            Email sandbox: alerts are available only to the operator’s test
+            account. Other recipients are skipped until a sending domain is
+            verified.
+          </p>
+        )}
         {children}
       </main>
     </div>

@@ -8,6 +8,7 @@ import { queue } from "@/lib/queue";
 import { log } from "@/lib/logger";
 import { incidentEmail, emailPayload } from "./templates";
 import { within } from "@/lib/deadline";
+import { emailRecipientAllowed } from "@/lib/email-policy";
 export async function recordNotification(
   tx: Prisma.TransactionClient,
   incident: Incident,
@@ -26,6 +27,7 @@ export async function recordNotification(
     kind === "OPENED" ? incident.startedAt : incident.resolvedAt!,
     process.env.EMAIL_FROM ?? "",
   );
+  const allowed = recipient && emailRecipientAllowed(recipient, payload.from);
   return tx.notificationDelivery.upsert({
     where: { deduplicationKey },
     create: {
@@ -34,8 +36,12 @@ export async function recordNotification(
       recipient,
       deduplicationKey,
       payload,
-      status: recipient ? "PENDING" : "SKIPPED",
-      lastError: recipient ? null : "No email available for account",
+      status: allowed ? "PENDING" : "SKIPPED",
+      lastError: !recipient
+        ? "No email available for account"
+        : allowed
+          ? null
+          : "Email sandbox policy blocked this recipient",
     },
     update: {},
   });
@@ -47,6 +53,12 @@ export type EmailSender = (
 ) => Promise<string>;
 type zPayload = ReturnType<typeof emailPayload.parse>;
 export const sendEmail: EmailSender = async (payload, recipient, key) => {
+  if (!emailRecipientAllowed(recipient, payload.from))
+    throw new AppError(
+      "EMAIL_SANDBOX_BLOCKED",
+      "Email sandbox policy blocked delivery",
+      403,
+    );
   if (!payload.from)
     throw new AppError(
       "EMAIL_UNCONFIGURED",
@@ -100,6 +112,26 @@ export async function deliverNotification(
         "Notification already being processed",
         503,
       );
+    if (
+      !item.recipient ||
+      !emailRecipientAllowed(
+        item.recipient,
+        process.env.RESEND_MODE === "sandbox"
+          ? emailPayload.parse(item.payload).from
+          : "",
+      )
+    ) {
+      await tx.notificationDelivery.update({
+        where: { id },
+        data: {
+          status: "SKIPPED",
+          lastError: "Email sandbox policy blocked this recipient",
+          leaseToken: null,
+          leaseExpiresAt: null,
+        },
+      });
+      return null;
+    }
     if (
       item.firstAttemptAt &&
       now.getTime() - item.firstAttemptAt.getTime() >= 23 * 3600000
