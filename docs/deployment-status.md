@@ -1,22 +1,27 @@
-# Deployment status — 3 October 2026
+# Deployment status — 4 October 2026
 
 Phase 14 is in progress. Phase 15 documentation is prepared; release remains blocked until the production Definition of Done is verified.
 
-| Item                          | Actual state                                                                                                                              |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| GitHub                        | Public K-Kabak/uptimeforge; main; existing CI green before this deployment-preparation milestone                                          |
-| Vercel                        | Project uptimeforge created in k-kabaks-projects, Hobby; GitHub repository connected; framework Next.js; Node 24                          |
-| Production URL                | Git-triggered production builds attempted; preflight rejects missing provider variables; no successful deployment                         |
-| Reserved domain / environment | uptimeforge.vercel.app verified by Vercel; APP_URL, NEXTAUTH_URL and encrypted random NEXTAUTH_SECRET configured for production           |
-| Neon                          | No existing marketplace resource found; free_v3 provisioning blocked by browser terms acceptance                                          |
-| Upstash Redis                 | No existing marketplace resource found; Free provisioning blocked by browser terms acceptance; intended autoUpgrade=false, prodPack=false |
-| QStash                        | No installed marketplace resource; Free capacity cannot cover the required continuous minute dispatcher                                   |
-| Resend                        | Credentials/domain verification not available; no real alert sent                                                                         |
-| GitHub OAuth                  | Production OAuth app credentials not available; real login not verified                                                                   |
-| Production migrations         | Not executed; production database does not exist yet                                                                                      |
-| Scheduler / smoke / cleanup   | Not executed in production                                                                                                                |
-| v1.0.0 / GitHub Release       | Not created; production verification remains incomplete                                                                                   |
+| Item                           | Actual state                                                                                                                                                                     |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub                         | Public K-Kabak/uptimeforge; main; Quality run 37156880634 succeeded for 6618edd1b368a1764984479b8a03842397aac823                                                                 |
+| Vercel                         | UptimeForge project on Hobby, GitHub connected, Next.js / Node 24; no successful production deployment                                                                           |
+| Production build               | Git-triggered builds reject missing production provider variables at preflight; no smoke test yet                                                                                |
+| Canonical domain / environment | uptimeforge.vercel.app verified; matching APP_URL / NEXTAUTH_URL and encrypted random NEXTAUTH_SECRET configured                                                                 |
+| Neon                           | uptimeforge-postgres on free_v3 in Frankfurt, connected to production; real pooled SQL connection and client TLS certificate verified                                            |
+| Production migrations          | All 8 applied through unpooled Neon connection; migrate status up to date; pooled SQL confirms 8 completed migrations, 0 users and 0 monitors                                    |
+| Redis                          | uptimeforge-redis on Free in Frankfurt, autoUpgrade=false, prodPack=false, eviction=false; encrypted production REST mappings set; real PING / SET NX EX / GET / DELETE verified |
+| QStash                         | uptimeforge-qstash on Free in Frankfurt, prodPack=false; production credentials installed; real schedules API authenticated with zero schedules; delivery unverified             |
+| Scheduler                      | Inactive: minute dispatcher cannot fit advertised Free quota; adequate capacity needs confirmation or explicitly authorized billing                                              |
+| Resend                         | No credentials or owned domain available; marketplace can provision Free only after a sending domain and terms acceptance; no real email sent                                    |
+| GitHub OAuth                   | Browser registration/configuration requested; production client credentials absent; real login unverified                                                                        |
+| Application smoke / cleanup    | Not executed in production; individual Redis infrastructure fixture was cleaned                                                                                                  |
+| v1.0.0 / GitHub Release        | Not created; production verification incomplete                                                                                                                                  |
 
-Current user action: accept Neon marketplace terms at the CLI-provided Vercel URL. Afterwards retry the same named resource operation, first listing existing resources to prevent duplication. Upstash authorization, OAuth app registration, Resend access/domain DNS and queue-capacity approval are tracked subsequent dependencies, not completed integrations.
+Neon and Upstash marketplace terms were accepted by the owner. Resource lists were inspected before provisioning; no duplicate resources were created. DIRECT_URL maps to the unpooled Neon URL; Upstash REST variables map from the marketplace KV variables. Secrets remain encrypted on Vercel and in ignored local files.
 
-No paid plan has been activated. No existing taskflow or freight-flow resource has been modified. Only the UptimeForge project is in scope. Local screenshots use disposable fixtures, not production data.
+Current user action: register or reuse production GitHub OAuth and save the Client ID/secret directly in Vercel production variables. GitHub requires this browser/account action; a CLI token cannot substitute for OAuth credentials. Resend domain/DNS and QStash capacity remain subsequent dependencies. Vercel CLI found no owned custom domains in the current team; the vercel.app application hostname cannot provide user-controlled sender DNS.
+
+Verification boundaries: Neon and Redis checks exercised real hosted services. The application's Prisma driver performed an actual transaction reading users, monitors and jobs (all zero). The application's rateLimit function ran its real Lua script against Upstash: first request accepted, second rejected with RATE_LIMITED / 429, positive bounded expiry verified, fixture removed and absence confirmed. The basic Redis fixture was also deleted and re-read as absent. QStash verification authenticated a read-only schedules request; it does not prove publication, signed delivery or automatic monitoring. Client TLS was checked on the actual PostgreSQL client socket; a pooled backend's pg_stat_ssl result does not describe the client-to-pooler connection. Database account/monitor counts are observations, not a global deletion operation.
+
+No paid plan has been activated. No taskflow or freight-flow resource has been modified. Only UptimeForge resources are in scope. Local screenshots use disposable fixtures, not production data.
