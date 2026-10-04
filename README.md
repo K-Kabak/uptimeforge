@@ -4,7 +4,7 @@
 
 HTTP uptime monitoring with SSRF protection, durable background jobs, incident detection, email alerts and public status pages. Built as a developer portfolio SaaS with real PostgreSQL integration tests and desktop/mobile E2E.
 
-**Deployment status:** Phase 0–13 implementation and CI are verified. Phase 14 is in progress: Vercel Hobby is connected to GitHub, all eight migrations are applied on Neon, hosted Redis operations and QStash's schedules API are verified. Production OAuth, verified-domain email and sufficient QStash capacity remain blocked. No live production URL or v1.0.0 release is claimed. See [deployment status](docs/deployment-status.md).
+**Deployment status:** Phase 0–13 implementation and CI are verified. Phase 14 is in progress: Vercel Hobby is connected to GitHub, all eight migrations are applied on Neon, hosted Redis operations and QStash's schedules API are verified. The production GitHub OAuth app is registered and its encrypted credentials are configured; real application login awaits deployment. Verified-domain email and sufficient QStash capacity remain blocked. No live production URL or v1.0.0 release is claimed. See [deployment status](docs/deployment-status.md).
 
 ## Product
 
@@ -79,7 +79,7 @@ Hosted Redis REST credentials are needed for normal application mutations and pu
 
 ## Environment variables
 
-Secrets belong in ignored local files or the Vercel environment, never in Git. `.env.production.local` is the ignored file used by production administration scripts. Do not use production credentials in `.env.test`.
+Secrets belong in ignored local files or the Vercel environment, never in Git. Production administration scripts can use an ignored `.env.production.local` for database access, but the production GitHub Client Secret stays exclusively in Vercel. Use an isolated `vercel env run` for complete production configuration; do not pull the OAuth secret into any repository file. Do not use production credentials in `.env.test`.
 
 | Variable                                                | Purpose                                                                |
 | ------------------------------------------------------- | ---------------------------------------------------------------------- |
