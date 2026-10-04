@@ -4,6 +4,7 @@ import { appUrl, requireEnv } from "./env";
 import { AppError, errorResponse } from "./errors";
 import { boundedBody } from "./body";
 import { within } from "./deadline";
+import { queueDeduplicationId } from "./qstash-deduplication";
 export function queue() {
   return new Client({
     token: requireEnv("QSTASH_TOKEN"),
@@ -16,7 +17,7 @@ export async function publishCheck(jobId: string) {
     queue().publishJSON({
       url: new URL("/api/internal/check", appUrl()).href,
       body: { version: 1, jobId },
-      deduplicationId: `check:${jobId}`,
+      deduplicationId: queueDeduplicationId("check", jobId),
       retries: 5,
       timeout: 30,
       flowControl: { key: "uptimeforge-checks", parallelism: 10 },

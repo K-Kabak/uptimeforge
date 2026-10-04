@@ -9,6 +9,7 @@ import { log } from "@/lib/logger";
 import { incidentEmail, emailPayload } from "./templates";
 import { within } from "@/lib/deadline";
 import { emailRecipientAllowed } from "@/lib/email-policy";
+import { queueDeduplicationId } from "@/lib/qstash-deduplication";
 export async function recordNotification(
   tx: Prisma.TransactionClient,
   incident: Incident,
@@ -256,7 +257,11 @@ export async function relayNotifications() {
         queue().publishJSON({
           url: new URL("/api/internal/notify", appUrl()).href,
           body: { version: 1, jobId: item.id },
-          deduplicationId: `notify:${item.id}:${item.attempts}`,
+          deduplicationId: queueDeduplicationId(
+            "notify",
+            item.id,
+            item.attempts,
+          ),
           retries: 5,
           timeout: 30,
         }),
