@@ -4,7 +4,7 @@
 
 HTTP uptime monitoring with SSRF protection, durable background jobs, incident detection, email alerts and public status pages. Built as a developer portfolio SaaS with real PostgreSQL integration tests and desktop/mobile E2E.
 
-**Deployment status:** Phase 0–13 implementation and CI are verified. Phase 14 is in progress: Vercel Hobby is connected to GitHub, all nine migrations are applied on Neon, hosted Redis operations and QStash's schedules API are verified. The production GitHub OAuth app is registered and its encrypted credentials are configured; real application login awaits deployment. Verified-domain email and sufficient QStash capacity remain blocked. No live production URL or v1.0.0 release is claimed. See [deployment status](docs/deployment-status.md).
+**Live deployment:** [uptimeforge.vercel.app](https://uptimeforge.vercel.app), in **restricted smoke mode**. Real GitHub login, Neon/Redis, signed QStash delivery, automatic checks during a bounded scheduler session, incident recovery and account-owner email delivery were verified. The minute dispatcher is now paused because it exceeds QStash Free capacity; daily cleanup is enabled. Resend sandbox sends only to the account owner. General-user email and continuous monitoring remain production gates, so v1.0.0 has not been released. See [deployment status](docs/deployment-status.md), [production smoke evidence](docs/production-smoke.md) and [Definition of Done audit](docs/definition-of-done.md).
 
 ## Product
 
@@ -29,6 +29,8 @@ These images show the local application with explicitly controlled fixture data.
 ![Public status page](docs/screenshots/status-page.png)
 
 [Mobile status page](docs/screenshots/status-mobile.png)
+
+[Live production landing screenshot](docs/screenshots/production-landing.png) was captured anonymously from the deployed site on 4 October 2026 and visually checked. Its example workspace is explicitly illustrative, not live monitoring data.
 
 ## Architecture
 
@@ -81,21 +83,24 @@ Hosted Redis REST credentials are needed for normal application mutations and pu
 
 Secrets belong in ignored local files or the Vercel environment, never in Git. Production administration scripts can use an ignored `.env.production.local` for database access, but the production GitHub Client Secret stays exclusively in Vercel. Use an isolated `vercel env run` for complete production configuration; do not pull the OAuth secret into any repository file. Do not use production credentials in `.env.test`.
 
-| Variable                                                | Purpose                                                                |
-| ------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `DATABASE_URL`                                          | Runtime pooled PostgreSQL connection; production Neon with TLS         |
-| `DIRECT_URL`                                            | Unpooled Neon connection for Prisma migrations                         |
-| `NEXTAUTH_SECRET`                                       | Strong session/auth secret, at least 32 characters in production       |
-| `NEXTAUTH_URL`                                          | Canonical application origin                                           |
-| `APP_URL`                                               | Same canonical origin; trusted queue callback and email-link base      |
-| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`                  | GitHub OAuth app credentials                                           |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`    | Hosted Redis REST access                                               |
-| `QSTASH_TOKEN`                                          | Queue publishing and schedule administration                           |
-| `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` | Queue signature verification and rotation                              |
-| `QSTASH_URL`                                            | Optional provider base URL, including regional endpoint                |
-| `RESEND_API_KEY`                                        | Email delivery credential                                              |
-| `EMAIL_FROM`                                            | Sender on a verified domain; display-name format supported             |
-| `TEST_REDIS_URL`                                        | Test-only local Redis TCP URL; defaults to localhost:56379 database 15 |
+| Variable                                                | Purpose                                                                                 |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                          | Runtime pooled PostgreSQL connection; production Neon with TLS                          |
+| `DIRECT_URL`                                            | Unpooled Neon connection for Prisma migrations                                          |
+| `NEXTAUTH_SECRET`                                       | Strong session/auth secret, at least 32 characters in production                        |
+| `NEXTAUTH_URL`                                          | Canonical application origin                                                            |
+| `APP_URL`                                               | Same canonical origin; trusted queue callback and email-link base                       |
+| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`                  | GitHub OAuth app credentials                                                            |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`    | Hosted Redis REST access                                                                |
+| `QSTASH_TOKEN`                                          | Queue publishing and schedule administration                                            |
+| `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` | Queue signature verification and rotation                                               |
+| `QSTASH_URL`                                            | Optional provider base URL, including regional endpoint                                 |
+| `RESEND_API_KEY`                                        | Email delivery credential                                                               |
+| `EMAIL_FROM`                                            | Sender on a verified domain; display-name format supported                              |
+| `TEST_REDIS_URL`                                        | Test-only local Redis TCP URL; defaults to localhost:56379 database 15                  |
+| `RESEND_MODE`                                           | `production` by default; explicit `sandbox` permits owner-only smoke tests              |
+| `RESEND_SANDBOX_RECIPIENT`                              | Private Resend account-owner allowlist for sandbox; encrypted on Vercel                 |
+| `SCHEDULER_MODE`                                        | `continuous` by default; `bounded` blocks indefinite setup and shows a dashboard notice |
 
 ## Tests and CI
 
@@ -132,7 +137,7 @@ pnpm production:preflight
 pnpm production:migrate
 ```
 
-Preflight validates configuration syntax; it does not certify provider connectivity, verified email DNS or quota sufficiency. Actual production smoke tests remain required before release.
+Preflight validates configuration syntax; it does not certify provider connectivity, verified email DNS or quota sufficiency. The real bounded production smoke test passed and its resources were removed. It does not certify unrestricted sending or continuous QStash capacity. The deployment visibly reports email and scheduling restrictions; Check now remains available.
 
 ## Security and trade-offs
 

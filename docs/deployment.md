@@ -42,6 +42,10 @@ On 4 October 2026 a real request through the application's email sender was acce
 
 The schedules script defaults to a dry run. After successful deployment and capacity authorization, run it with the production environment and `--apply` to upsert `uptimeforge-dispatch` (every minute) and `uptimeforge-cleanup` (02:00 UTC daily). Inspect existing schedules first, including their destinations, and confirm exactly one matching schedule of each kind. A daily UTC cleanup stays at 02:00 UTC across DST changes.
 
+The current deployment sets `SCHEDULER_MODE=bounded`: the setup script refuses indefinite `--apply`, and the dashboard explains that automatic checks run only during operator smoke windows. The minute dispatcher is paused after real smoke; the single daily cleanup schedule is enabled because one message/day fits Free capacity. For a bounded smoke, explicitly inspect and resume the existing dispatcher, arm a timed pause in finally, and verify the paused state afterwards. Do not leave a scheduler active merely because one short smoke window succeeded.
+
+QStash transport deduplication IDs are SHA-256 hashes of framed logical key parts: real publication rejected colons in the former IDs with HTTP 400. Do not revert to colon-containing transport IDs or lossy replacement. Database/Resend keys are separate and remain frozen across retries.
+
 Confirm real signed dispatch calls, durable publication, check completion and nextCheckAt movement. Exercise actual provider retry/redelivery without fabricating endpoint failures. Inspect QStash events/DLQ and application structured logs. Recovery must reclaim expired leases, fence old workers and leave completed jobs idempotent. Never hold a DB transaction during HTTP/email calls. Do not report schedule creation alone as automatic-check success.
 
 ## Production smoke test and cleanup
