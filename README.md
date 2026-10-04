@@ -4,7 +4,7 @@
 
 HTTP uptime monitoring with SSRF protection, durable background jobs, incident detection, email alerts and public status pages. Built as a developer portfolio SaaS with real PostgreSQL integration tests and desktop/mobile E2E.
 
-**Deployment status:** Phase 0–13 implementation and CI are verified. Phase 14 is in progress: Vercel Hobby is connected to GitHub, all eight migrations are applied on Neon, hosted Redis operations and QStash's schedules API are verified. The production GitHub OAuth app is registered and its encrypted credentials are configured; real application login awaits deployment. Verified-domain email and sufficient QStash capacity remain blocked. No live production URL or v1.0.0 release is claimed. See [deployment status](docs/deployment-status.md).
+**Deployment status:** Phase 0–13 implementation and CI are verified. Phase 14 is in progress: Vercel Hobby is connected to GitHub, all nine migrations are applied on Neon, hosted Redis operations and QStash's schedules API are verified. The production GitHub OAuth app is registered and its encrypted credentials are configured; real application login awaits deployment. Verified-domain email and sufficient QStash capacity remain blocked. No live production URL or v1.0.0 release is claimed. See [deployment status](docs/deployment-status.md).
 
 ## Product
 
