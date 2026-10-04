@@ -70,6 +70,11 @@ export function productionErrors(env: Record<string, string | undefined>) {
   if ((env.NEXTAUTH_SECRET?.length ?? 0) < 32)
     errors.push("NEXTAUTH_SECRET: at least 32 characters required");
   errors.push(...emailPolicyErrors(env));
+  if (
+    env.SCHEDULER_MODE &&
+    !["continuous", "bounded"].includes(env.SCHEDULER_MODE)
+  )
+    errors.push("SCHEDULER_MODE: continuous or bounded required");
   if (env.QSTASH_URL && url("QSTASH_URL")?.protocol !== "https:")
     errors.push("QSTASH_URL: HTTPS required");
   return errors;

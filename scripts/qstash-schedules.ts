@@ -6,6 +6,10 @@ if (!process.argv.includes("--apply")) {
     "Dry run: dispatcher every minute; cleanup daily 02:00 UTC. Pass --apply only when configuring an authorized environment.",
   );
 } else {
+  if (process.env.SCHEDULER_MODE === "bounded")
+    throw new Error(
+      "Continuous scheduler blocked in bounded smoke mode; verify capacity before enabling it.",
+    );
   await queue().schedules.create({
     scheduleId: "uptimeforge-dispatch",
     destination: new URL("/api/internal/dispatch", appUrl()).href,

@@ -64,3 +64,11 @@ it("allows explicit smoke-only sandbox configuration, never an implicit fallback
     }),
   ).toContain("RESEND_SANDBOX_RECIPIENT: one account-owner email required");
 });
+it("validates an explicit bounded scheduler mode without implying sufficient capacity", () => {
+  expect(
+    productionErrors({ ...configured, SCHEDULER_MODE: "bounded" }),
+  ).toEqual([]);
+  expect(productionErrors({ ...configured, SCHEDULER_MODE: "typo" })).toContain(
+    "SCHEDULER_MODE: continuous or bounded required",
+  );
+});

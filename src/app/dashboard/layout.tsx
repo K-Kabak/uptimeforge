@@ -31,6 +31,16 @@ export default async function DashboardLayout({
         </span>
       </header>
       <main id="main-content" className="py-10">
+        {process.env.SCHEDULER_MODE === "bounded" && (
+          <p
+            role="status"
+            className="mb-6 rounded-lg border border-amber-500 p-4 text-sm"
+          >
+            Continuous automatic monitoring is disabled on this smoke
+            deployment. Check now is available; automatic checks run only during
+            operator tests.
+          </p>
+        )}
         {process.env.RESEND_MODE === "sandbox" && (
           <p
             role="status"

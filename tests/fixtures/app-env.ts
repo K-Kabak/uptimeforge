@@ -31,6 +31,7 @@ export function e2eServerEnv(inherited: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
     EMAIL_FROM: "",
     RESEND_MODE: "production",
     RESEND_SANDBOX_RECIPIENT: "",
+    SCHEDULER_MODE: "continuous",
     VERCEL_ENV: "",
     VERCEL_URL: "",
     VERCEL_OIDC_TOKEN: "",
